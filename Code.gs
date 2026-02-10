@@ -10,6 +10,13 @@
  */
 
 // ═══════════════════════════════════════════════════════════════════════════
+// DEV_MODE — Set to true to bypass auth & use mock data for local UI testing
+// No Google Sheets, Drive, or enterprise permissions required.
+// Set to false before deploying to production.
+// ═══════════════════════════════════════════════════════════════════════════
+const DEV_MODE = true;
+
+// ═══════════════════════════════════════════════════════════════════════════
 // CONFIG - RCA Manager Configuration
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -746,6 +753,7 @@ const Auth = {
 // ═══════════════════════════════════════════════════════════════════════════
 
 function getCurrentUser_() {
+  if (DEV_MODE) return 'dev@priceline.com';
   try {
     return Session.getActiveUser().getEmail() || '';
   } catch (e) {
@@ -827,8 +835,8 @@ Object.freeze(Auth);
 function doGet(e) {
   const page = (e && e.parameter && e.parameter.page) || 'home';
   
-  // Get current user
-  const user = Session.getActiveUser().getEmail();
+  // Get current user (DEV_MODE: skip Session auth)
+  const user = DEV_MODE ? 'dev@priceline.com' : Session.getActiveUser().getEmail();
   if (!user) {
     return HtmlService.createHtmlOutput(
       '<div style="font-family:sans-serif;padding:40px;text-align:center;background:#000;color:#fff;min-height:100vh;">' +
@@ -857,6 +865,7 @@ function doGet(e) {
         title = 'Rebuttal Engine';
         break;
       case 'rep':
+      case 'rep-new':
         title = 'Representation Manager';
         break;
       case 'queue':
@@ -901,8 +910,10 @@ function doGet(e) {
         title = 'Rebuttal Engine';
     }
     
-    // Normalize: 'orion' and 'rep-new' map to existing page IDs
-    const effectivePage = (page === 'orion') ? 'home' : page;
+    // Normalize: 'orion' → 'home', 'rep-new' → 'rep'
+    const effectivePage = (page === 'orion') ? 'home' 
+                        : (page === 'rep-new') ? 'rep'
+                        : page;
     
     // Single template for all pages
     const template = HtmlService.createTemplateFromFile('Index');
@@ -943,6 +954,7 @@ function doGet(e) {
  * Priority: Authorization module → ORION_STANDARDS → CONFIG
  */
 function isAdmin_(user) {
+  if (DEV_MODE) return true;
   try {
     // Try Authorization module first
     if (typeof Authorization !== 'undefined' && Authorization.isAdmin) {
@@ -996,12 +1008,287 @@ function openPage_(page) {
 }
 
 function initializeSheets() {
+  if (DEV_MODE) return { success: true, message: 'DEV_MODE: Sheets init skipped' };
   try {
     SheetsService.initializeAllSheets();
     SpreadsheetApp.getUi().alert('Sheets initialized successfully!');
   } catch (e) {
     console.log('Sheets initialized');
   }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// DEV_MODE MOCK DATA OVERRIDES
+// When DEV_MODE = true, all google.script.run endpoints return mock data
+// so the UI can be tested without Google Sheets / Drive access.
+// ═══════════════════════════════════════════════════════════════════════════
+
+if (typeof DEV_MODE !== 'undefined' && DEV_MODE) {
+  
+  // ── Mock data templates ──────────────────────────────────────────────
+  const MOCK_USER = 'dev@priceline.com';
+  const MOCK_DATE = new Date().toISOString();
+  
+  const MOCK_REPORT = {
+    id: 'RPT-001', title: 'Monthly Chargeback Analysis', state: 'Pending',
+    type: 'Analysis', priority: 'High', description: 'Monthly review of chargeback patterns.',
+    created: MOCK_DATE, modified: MOCK_DATE, createdBy: MOCK_USER,
+    responsible: MOCK_USER, accountable: 'manager@priceline.com',
+    consulted: '', informed: '', approvalHistory: '[]', comments: '[]',
+    process: 'Standard', frequency: 'Monthly'
+  };
+  
+  const MOCK_REPORT_2 = {
+    id: 'RPT-002', title: 'Fraud Detection Rate Review', state: 'Accepted',
+    type: 'Review', priority: 'Medium', description: 'Quarterly fraud detection metrics.',
+    created: MOCK_DATE, modified: MOCK_DATE, createdBy: 'analyst@priceline.com',
+    responsible: 'analyst@priceline.com', accountable: MOCK_USER,
+    consulted: '', informed: '', approvalHistory: '[]', comments: '[]',
+    process: 'Standard', frequency: 'Quarterly'
+  };
+  
+  const MOCK_CASE = {
+    portal: 'EXP', itn: '12345678901234', rcaValue: 'Customer - Cancel policy dispute',
+    assignedUser: MOCK_USER, status: 'Pending', priority: 'Normal',
+    bookingDate: '2024-01-15', checkInDate: '2024-02-01', checkOutDate: '2024-02-03',
+    hotelName: 'Grand Hyatt Demo Hotel', guestName: 'John Demo',
+    chargebackAmount: 250.00, chargebackCurrency: 'USD', reasonCode: '13.1',
+    cardType: 'Visa', caseId: 'CB-2024-001', representmentDeadline: '2024-03-01',
+    notes: 'Demo case for UI testing', response: '', row: 2,
+    rcaCategory: 'Customer', weight: 3
+  };
+  
+  const MOCK_CASE_2 = {
+    portal: 'BKG', itn: '98765432109876', rcaValue: 'Hotel - Billed Direct',
+    assignedUser: 'analyst@priceline.com', status: 'Assigned', priority: 'High',
+    bookingDate: '2024-01-20', checkInDate: '2024-03-01', checkOutDate: '2024-03-05',
+    hotelName: 'Marriott Demo Resort', guestName: 'Jane Sample',
+    chargebackAmount: 475.50, chargebackCurrency: 'USD', reasonCode: '13.3',
+    cardType: 'Mastercard', caseId: 'CB-2024-002', representmentDeadline: '2024-04-01',
+    notes: 'Another demo case', response: '', row: 3,
+    rcaCategory: 'Hotel', weight: 5
+  };
+
+  const MOCK_COACHING_CASE = {
+    row: 2, date: '2024-01-15', analyst: 'analyst@priceline.com',
+    itn: '12345678901234', portal: 'EXP', hotelName: 'Grand Hyatt Demo',
+    reasonCode: '13.1', outcome: 'Won', amount: 250.00,
+    qaScore: 95, smeNotes: '', reviewedBy: ''
+  };
+  
+  // ── ORION RT (Reports/Queue/Dashboard) ───────────────────────────────
+  getUserInfo = function() {
+    return { email: MOCK_USER, displayName: 'dev', isAdmin: true };
+  };
+  getReports = function(_filters) {
+    return [MOCK_REPORT, MOCK_REPORT_2];
+  };
+  getReportById = function(id) {
+    return id === 'RPT-002' ? MOCK_REPORT_2 : MOCK_REPORT;
+  };
+  updateReport = function(_id, _data) {
+    return { success: true, message: 'DEV_MODE: Report updated' };
+  };
+  changeReportState = function(_id, _state, _comment) {
+    return { success: true, message: 'DEV_MODE: State changed' };
+  };
+  createReport = function(_data) {
+    return { success: true, id: 'RPT-NEW-' + Date.now() };
+  };
+  deleteReport = function(_id) {
+    return { success: true, message: 'DEV_MODE: Report deleted' };
+  };
+  getReportCounts = function() {
+    return { total: 2, pending: 1, accepted: 1, rejected: 0, draft: 0 };
+  };
+  getDashboardStats = function() {
+    return { totalReports: 2, byState: { pending: 1, accepted: 1, rejected: 0 } };
+  };
+  getFilterOptions = function() {
+    return {
+      types: ['Analysis', 'Review', 'Audit'],
+      states: ['Pending', 'Accepted', 'Rejected', 'Draft'],
+      priorities: ['High', 'Medium', 'Low'],
+      owners: [MOCK_USER, 'analyst@priceline.com', 'manager@priceline.com'],
+      processes: ['Standard', 'Expedited'],
+      frequencies: ['Daily', 'Weekly', 'Monthly', 'Quarterly']
+    };
+  };
+  getUsersForPicker = function() {
+    return [
+      { email: MOCK_USER, name: 'Dev User', role: 'Admin' },
+      { email: 'analyst@priceline.com', name: 'Demo Analyst', role: 'Analyst' },
+      { email: 'manager@priceline.com', name: 'Demo Manager', role: 'Manager' }
+    ];
+  };
+  getAuditLog = function(_filters) {
+    return [
+      { timestamp: MOCK_DATE, user: MOCK_USER, action: 'Created', entity: 'RPT-001', details: 'Created report' },
+      { timestamp: MOCK_DATE, user: 'analyst@priceline.com', action: 'Updated', entity: 'RPT-002', details: 'Changed state' }
+    ];
+  };
+  importSampleUsers = function() { return { success: true, count: 3 }; };
+  importAllReports = function() { return { success: true, count: 2 }; };
+  importReportsFromData = function() { return { success: true, count: 0 }; };
+  getUsers = function() {
+    return [
+      { email: MOCK_USER, name: 'Dev User', role: 'Admin', active: true },
+      { email: 'analyst@priceline.com', name: 'Demo Analyst', role: 'Analyst', active: true }
+    ];
+  };
+  getAllUsers = function() { return getUsers(); };
+  exportReportsCSV = function() { return { success: true, url: '#' }; };
+  
+  // ── RCA Manager (Rebuttal Engine) ────────────────────────────────────
+  searchCase = function(_itn) { return MOCK_CASE; };
+  getCase = function(_portal) { return [MOCK_CASE, MOCK_CASE_2]; };
+  getPendingCases = function() { return [MOCK_CASE, MOCK_CASE_2]; };
+  getReservationData = function(_itn) {
+    return {
+      found: true, itn: '12345678901234', guestName: 'John Demo',
+      hotelName: 'Grand Hyatt Demo Hotel', checkIn: '2024-02-01', checkOut: '2024-02-03',
+      amount: 250.00, currency: 'USD', status: 'Confirmed'
+    };
+  };
+  checkClaim = function(_row) { return { claimed: false, claimedBy: null }; };
+  resolveRCA = function() { return { success: true }; };
+  updateRefundAmount = function() { return { success: true }; };
+  updateRoomType = function() { return { success: true }; };
+  markInactive = function() { return { success: true }; };
+  recordHeartbeat = function() { return { success: true }; };
+  uploadImageToDrive = function() { return { success: true, url: 'https://via.placeholder.com/200' }; };
+  uploadAllFiles = function() { return { success: true }; };
+  sendForRecovery = function() { return { success: true }; };
+  sendForVbException = function() { return { success: true }; };
+  generateDemoData = function() { return { success: true, count: 5 }; };
+  getActiveAnalysts = function() {
+    return [
+      { email: MOCK_USER, name: 'Dev User', casesAssigned: 3, casesResolved: 10 },
+      { email: 'analyst@priceline.com', name: 'Demo Analyst', casesAssigned: 5, casesResolved: 8 }
+    ];
+  };
+  getAnalystStats = function() {
+    return [
+      { analyst: MOCK_USER, assigned: 3, resolved: 10, avgTime: '2.5h' },
+      { analyst: 'analyst@priceline.com', assigned: 5, resolved: 8, avgTime: '3.1h' }
+    ];
+  };
+  getCaseDistributionSummary = function() {
+    return { total: 8, byPortal: { EXP: 5, BKG: 3 }, byStatus: { Pending: 2, Assigned: 4, Resolved: 2 } };
+  };
+  getCannedResponses = function() {
+    return [
+      { id: 1, name: 'No Show Default', category: 'Customer', text: 'Guest did not show up for reservation.' },
+      { id: 2, name: 'Direct Bill', category: 'Hotel', text: 'Hotel billed the guest directly.' }
+    ];
+  };
+  createCannedRes = function() { return { success: true, id: Date.now() }; };
+  saveCannedResponse = function() { return { success: true }; };
+  initializeAutoCreation = function() { return { success: true }; };
+  
+  // ── Config / Admin ───────────────────────────────────────────────────
+  getSheetConfig = function() {
+    return {
+      RCA_DATA: CONFIG.DEFAULT_SHEET_IDS.LIVE_DATASHEET,
+      CB_CONTROLLER: CONFIG.DEFAULT_SHEET_IDS.CB_CONTROLLER,
+      IMAGES: CONFIG.DEFAULT_FOLDER_IDS.IMAGES
+    };
+  };
+  getClientConfig = function() {
+    return {
+      features: CONFIG.FEATURES,
+      caseTypes: CONFIG.CASE_TYPES,
+      sessionTimeout: CONFIG.SESSION.STALE_MINUTES
+    };
+  };
+  updateSheetId = function() { return { success: true }; };
+  resetSheetId = function() { return { success: true }; };
+  updateFolderId = function() { return { success: true }; };
+  resetFolderId = function() { return { success: true }; };
+  createUser = function() { return { success: true }; };
+  updateUser = function() { return { success: true }; };
+  deactivateReport = function() { return { success: true }; };
+  addComment = function() { return { success: true }; };
+  agentCount = function() { return 2; };
+  
+  // ── Representation Manager ───────────────────────────────────────────
+  rmGetPendingUploads = function(_portal, _currency) {
+    return [
+      { row: 2, itn: '11111111111111', portal: 'EXP', amount: 150, currency: 'USD', status: 'Pending', hotel: 'Demo Hotel A' },
+      { row: 3, itn: '22222222222222', portal: 'BKG', amount: 300, currency: 'USD', status: 'Pending', hotel: 'Demo Hotel B' }
+    ];
+  };
+  rmChallenge = function() { return { success: true }; };
+  rmAccept = function() { return { success: true }; };
+  rmReversal = function() { return { success: true }; };
+  rmAutoclosed = function() { return { success: true }; };
+  rmRecreate = function() { return { success: true }; };
+  rmGetCounts = function() { return { pending: 2, challenged: 1, accepted: 3, total: 6 }; };
+  rmSearchFiles = function() { return []; };
+  
+  // ── Email Confirmations ──────────────────────────────────────────────
+  ecGetPendingItems = function() {
+    return [
+      { analyst: MOCK_USER, itn: '33333333', addedDt: '2024-01-10', dueDt: '2024-02-10', status: 'Pending' },
+      { analyst: MOCK_USER, itn: '44444444', addedDt: '2024-01-12', dueDt: '2024-02-12', status: 'Pending' }
+    ];
+  };
+  ecUploadFiles = function() { return { message: 'DEV_MODE: Files uploaded!', updated: [] }; };
+  
+  // ── CBQ (Text Analytics / Word Analyser) ─────────────────────────────
+  cbqGetDocuments = function() { return []; };
+  cbqGetQueueStatus = function() { return { queued: 0, processing: 0, completed: 5, failed: 0 }; };
+  cbqGetStatsSummary = function() {
+    return { totalDocs: 5, totalWords: 1200, uniqueWords: 340, avgWordsPerDoc: 240 };
+  };
+  cbqGetWordCloudData = function() {
+    return [
+      { word: 'chargeback', count: 45 }, { word: 'refund', count: 38 },
+      { word: 'hotel', count: 32 }, { word: 'guest', count: 28 },
+      { word: 'reservation', count: 25 }, { word: 'cancelled', count: 20 }
+    ];
+  };
+  cbqGetBubbleChartData = function() {
+    return [
+      { word: 'fraud', x: 10, y: 40, r: 30 }, { word: 'dispute', x: 30, y: 60, r: 25 },
+      { word: 'refund', x: 50, y: 30, r: 35 }
+    ];
+  };
+  cbqGetConfig = function() { return { aiEnabled: false, maxDocs: 100 }; };
+  cbqGetFilteredWords = function() { return ['the', 'a', 'an', 'is', 'was', 'are']; };
+  cbqUploadText = function() { return { success: true, docId: 'DOC-' + Date.now() }; };
+  cbqUploadTextWithAI = function() { return { success: true, docId: 'DOC-' + Date.now() }; };
+  cbqUploadPDFWithAI = function() { return { success: true, docId: 'DOC-' + Date.now() }; };
+  cbqUploadFromFolderWithAI = function() { return { success: true, count: 0 }; };
+  cbqProcessQueue = function() { return { processed: 0 }; };
+  cbqRecalculateStats = function() { return { success: true }; };
+  cbqExportStats = function() { return { success: true, url: '#' }; };
+  cbqAddFilteredWord = function() { return { success: true }; };
+  cbqRemoveFilteredWord = function() { return { success: true }; };
+  cbqInitializeFilteredWords = function() { return { success: true }; };
+  cbqTestAIConnection = function() { return { success: true, model: 'gpt-4o-mini (mock)' }; };
+  
+  // ── FA Coaching ──────────────────────────────────────────────────────
+  getCoachingDates = function() {
+    return ['2024-01-15', '2024-01-22', '2024-01-29', '2024-02-05'];
+  };
+  getCoachingCases = function(_date) {
+    return [MOCK_COACHING_CASE, {
+      row: 3, date: '2024-01-15', analyst: 'analyst@priceline.com',
+      itn: '98765432109876', portal: 'BKG', hotelName: 'Marriott Demo',
+      reasonCode: '13.3', outcome: 'Lost', amount: 475.50,
+      qaScore: 72, smeNotes: 'Needs follow-up', reviewedBy: MOCK_USER
+    }];
+  };
+  saveCoachingNotes = function() { return { success: true }; };
+  faSaveSmeNotes = function() { return { success: true }; };
+  getUserEmail = function() { return MOCK_USER; };
+  
+  // ── Rebuttal Generator ───────────────────────────────────────────────
+  generateRebuttals = function() { return { success: true, message: 'DEV_MODE: No rebuttals generated' }; };
+  
+  // ── Triggered functions (no-ops in DEV_MODE) ─────────────────────────
+  sendForEmailConfirmation = function() { return { success: true }; };
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

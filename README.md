@@ -193,28 +193,17 @@ Reporting governance module with RACI-based workflows:
 
 ```
 Priceline-Orion/
-├── Code.gs                 # Consolidated server-side code (7 modules merged)
+├── Code.gs                 # ALL server-side code (7 modules merged, ~294KB)
+├── Index.html              # ALL client-side UI (17 pages merged, ~511KB)
 ├── appsscript.json         # GAS manifest
-├── Theme.html              # Universal design system (CSS variables, components)
-├── ThemeState.html          # Dark/light mode persistence
-├── Home.html               # 6-module landing page
-├── CBModule.html            # Chargeback sub-module selector
-├── MainRCAPage.html         # Rebuttal Engine UI
-├── RCAPartials.html         # RCA UI components (modals, forms, responses)
-├── RepManagerUI.html        # Representation Manager UI
-├── CBQMain.html             # Word Analyser (AI text analytics)
-├── FACoaching.html          # FA Coaching (SME case review)
-├── Dashboard.html           # Reporting dashboard
-├── ReportsQueue.html        # Reports queue with filters
-├── ReportDetail.html        # Single report detail view
-├── AdminPanel.html          # Admin configuration panel
-├── EmailConfirm.html        # Email confirmation upload
-├── InfoPage.html            # About / Privacy / Data Retention
-├── Header.html              # Shared header partial
-├── RTPartials.html          # Reporting UI components
 ├── README.md
 └── CHANGELOG.md
 ```
+
+> **Two-file architecture**: All `.gs` modules are merged into `Code.gs` and all `.html` pages are
+> merged into `Index.html` using GAS server-side conditional rendering (`<? if (page === '...') { ?>`).
+> The `doGet()` router passes `page` as a template variable to `Index.html`, which conditionally
+> renders only the requested page's styles and markup.
 
 ### Code.gs Internal Structure
 
@@ -297,8 +286,8 @@ Sensitive values are stored via `PropertiesService.getScriptProperties()`:
 ### Steps
 
 1. **Create a new Google Apps Script project** at [script.google.com](https://script.google.com)
-2. **Copy `Code.gs`** as the main script file
-3. **Create each `.html` file** as an HTML file in the project (File → New → HTML file)
+2. **Copy `Code.gs`** as the main script file (replace default Code.gs)
+3. **Create `Index.html`** as an HTML file in the project (File → New → HTML file → name it "Index")
 4. **Copy `appsscript.json`** to the manifest (View → Show manifest file)
 5. **Set Script Properties** (Project Settings → Script Properties):
    - `OPENAI_API_KEY` — your OpenAI key (required for AI features)

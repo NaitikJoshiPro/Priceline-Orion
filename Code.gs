@@ -836,131 +836,79 @@ function doGet(e) {
     );
   }
   
-  let template;
   let title = 'ORION Enterprise';
   
+  // Page-specific variables
+  let pageType = '';
+  let pageTitle = '';
+  let reportId = null;
+  
   try {
+    // All pages served from single Index.html — just set title & page-specific vars
     switch (page) {
-      // ─────────────────────────────────────────────────────────────────────
-      // ORION MAIN LANDING (6-MODULE GRID)
-      // ─────────────────────────────────────────────────────────────────────
       case 'home':
-        template = HtmlService.createTemplateFromFile('Home');
+      case 'orion':
         title = 'ORION Enterprise Platform';
         break;
-      
-      // ─────────────────────────────────────────────────────────────────────
-      // CHARGEBACK MODULE (Sub-menu with RCA/Rep/WordAnalyser)
-      // ─────────────────────────────────────────────────────────────────────
       case 'cb':
-        template = HtmlService.createTemplateFromFile('CBModule');
         title = 'Chargeback Module';
         break;
-      
       case 'rca':
-        template = HtmlService.createTemplateFromFile('MainRCAPage');
         title = 'Rebuttal Engine';
         break;
-      
-      // ─────────────────────────────────────────────────────────────────────
-      // REPRESENTATION MANAGER MODULE
-      // ─────────────────────────────────────────────────────────────────────
       case 'rep':
-        template = HtmlService.createTemplateFromFile('RepManagerUI');
         title = 'Representation Manager';
         break;
-      
-      case 'rep-new':
-        template = HtmlService.createTemplateFromFile('RepManagerUINew');
-        title = 'Representation Manager';
-        break;
-      
-      // ─────────────────────────────────────────────────────────────────────
-      // ORION: REPORTING GOVERNANCE (RT)
-      // ─────────────────────────────────────────────────────────────────────
-      case 'orion':
-        template = HtmlService.createTemplateFromFile('Home');
-        title = 'ORION Platform';
-        break;
-      
       case 'queue':
-        template = HtmlService.createTemplateFromFile('ReportsQueue');
         title = 'ORION - Reports Queue';
         break;
-      
       case 'report':
-        template = HtmlService.createTemplateFromFile('ReportDetail');
-        template.reportId = (e && e.parameter && e.parameter.id) || null;
+        reportId = (e && e.parameter && e.parameter.id) || null;
         title = 'ORION - Report Details';
         break;
-      
       case 'dashboard':
-        template = HtmlService.createTemplateFromFile('Dashboard');
         title = 'ORION - Dashboard';
         break;
-      
       case 'admin':
-        template = HtmlService.createTemplateFromFile('AdminPanel');
         title = 'ORION - Admin Panel';
         break;
-      
-      // ─────────────────────────────────────────────────────────────────────
-      // EMAIL CONFIRMATIONS MODULE
-      // ─────────────────────────────────────────────────────────────────────
       case 'email-confirm':
-        template = HtmlService.createTemplateFromFile('EmailConfirm');
         title = 'Email Confirmations';
         break;
-      
-      // ─────────────────────────────────────────────────────────────────────
-      // ORION: CHARGEBACK ANALYTICS (CBQ)
-      // ─────────────────────────────────────────────────────────────────────
       case 'cbq':
-        template = HtmlService.createTemplateFromFile('CBQMain');
         title = 'ORION - Text Analytics';
         break;
-      
-      // ─────────────────────────────────────────────────────────────────────
-      // FA COACHING MODULE
-      // ─────────────────────────────────────────────────────────────────────
       case 'fa':
-        template = HtmlService.createTemplateFromFile('FACoaching');
         title = 'FA Coaching';
         break;
-      
-      // ─────────────────────────────────────────────────────────────────────
-      // INFO PAGES (unified template)
-      // ─────────────────────────────────────────────────────────────────────
       case 'about':
-        template = HtmlService.createTemplateFromFile('InfoPage');
-        template.pageType = 'about';
-        template.pageTitle = 'About';
+        pageType = 'about';
+        pageTitle = 'About';
         title = 'ORION - About';
         break;
-      
       case 'privacy':
-        template = HtmlService.createTemplateFromFile('InfoPage');
-        template.pageType = 'privacy';
-        template.pageTitle = 'Privacy Policy';
+        pageType = 'privacy';
+        pageTitle = 'Privacy Policy';
         title = 'ORION - Privacy Policy';
         break;
-      
       case 'data-retention':
-        template = HtmlService.createTemplateFromFile('InfoPage');
-        template.pageType = 'data-retention';
-        template.pageTitle = 'Data Retention';
+        pageType = 'data-retention';
+        pageTitle = 'Data Retention';
         title = 'ORION - Data Retention';
         break;
-      
-      // ─────────────────────────────────────────────────────────────────────
-      // DEFAULT: RCA MANAGER
-      // ─────────────────────────────────────────────────────────────────────
       default:
-        template = HtmlService.createTemplateFromFile('MainRCAPage');
+        // Default to RCA (home page equivalent for the rebuttal engine)
         title = 'Rebuttal Engine';
     }
     
-    // Set template variables
+    // Normalize: 'orion' and 'rep-new' map to existing page IDs
+    const effectivePage = (page === 'orion') ? 'home' : page;
+    
+    // Single template for all pages
+    const template = HtmlService.createTemplateFromFile('Index');
+    
+    // Set template variables used by Index.html conditional blocks
+    template.page = effectivePage;
     template.user = user;
     template.isAdmin = isAdmin_(user);
     template.featureFlags = Config.FEATURE_FLAGS || {
@@ -969,6 +917,9 @@ function doGet(e) {
       ALLOW_IMPORT_USERS: true,
       ALLOW_BULK_ACTIONS: false
     };
+    template.reportId = reportId;
+    template.pageType = pageType;
+    template.pageTitle = pageTitle;
     
     return template.evaluate()
       .setTitle(title)
@@ -985,13 +936,6 @@ function doGet(e) {
       '<pre>' + error.stack + '</pre></div>'
     );
   }
-}
-
-/**
- * Include HTML files for templating
- */
-function include(filename) {
-  return HtmlService.createHtmlOutputFromFile(filename).getContent();
 }
 
 /**

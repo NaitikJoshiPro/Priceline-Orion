@@ -1,0 +1,137 @@
+<!--
+  ORION Header Partial
+  Unified header with logo, navigation, and theme toggle
+  Include via: <?!= include('Header'); ?>
+  
+  Required template variables:
+  - user: Current user email
+  - isAdmin: Boolean for admin status
+  - currentPage: String identifier for active nav item
+-->
+<header class="orion-header">
+    <div class="orion-header-left">
+        <a href="<?= ScriptApp.getService().getUrl() ?>" class="orion-logo">Ø</a>
+        <nav class="orion-nav">
+            <? if (typeof currentPage !== 'undefined') { ?>
+            <? if (currentPage === 'home') { ?>
+            <!-- Home page - no nav items needed -->
+            <? } else if (currentPage === 'cb' || currentPage === 'rca' || currentPage === 'rep' || currentPage === 'cbq') { ?>
+            <a class="orion-nav-link <?= currentPage === 'rca' ? 'active' : '' ?>"
+                href="<?= ScriptApp.getService().getUrl() ?>?page=rca">Rebuttal Engine</a>
+            <a class="orion-nav-link <?= currentPage === 'rep' ? 'active' : '' ?>"
+                href="<?= ScriptApp.getService().getUrl() ?>?page=rep">Rep Manager</a>
+            <? if (isAdmin) { ?>
+            <a class="orion-nav-link <?= currentPage === 'cbq' ? 'active' : '' ?>"
+                href="<?= ScriptApp.getService().getUrl() ?>?page=cbq">Word Analyser</a>
+            <? } ?>
+            <? } else if (currentPage === 'queue' || currentPage === 'admin' || currentPage === 'dashboard') { ?>
+            <a class="orion-nav-link <?= currentPage === 'queue' ? 'active' : '' ?>"
+                href="<?= ScriptApp.getService().getUrl() ?>?page=queue">Reports Queue</a>
+            <? if (isAdmin) { ?>
+            <a class="orion-nav-link <?= currentPage === 'admin' ? 'active' : '' ?>"
+                href="<?= ScriptApp.getService().getUrl() ?>?page=admin">Admin Panel</a>
+            <a class="orion-nav-link <?= currentPage === 'dashboard' ? 'active' : '' ?>"
+                href="<?= ScriptApp.getService().getUrl() ?>?page=dashboard">Dashboard</a>
+            <? } ?>
+            <? } ?>
+            <? } ?>
+        </nav>
+    </div>
+    <div class="orion-header-right">
+        <? if (typeof user !== 'undefined' && user) { ?>
+        <span class="orion-user-badge">
+            <?= user ?>
+        </span>
+        <? } ?>
+        <? if (typeof isAdmin !== 'undefined' && isAdmin) { ?>
+        <span class="orion-admin-badge">Admin</span>
+        <? } ?>
+        <button class="theme-toggle" onclick="Theme.toggle()" title="Toggle theme" aria-label="Toggle dark/light mode">
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="5" />
+                <path
+                    d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+            </svg>
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="currentColor">
+                <path
+                    d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
+            </svg>
+        </button>
+    </div>
+</header>
+
+<style>
+    /* Header styles - extend Theme.html */
+    .orion-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 24px;
+        background: var(--bg-secondary);
+        border-bottom: 1px solid var(--border);
+    }
+
+    .orion-header-left {
+        display: flex;
+        align-items: center;
+        gap: 24px;
+    }
+
+    .orion-logo {
+        font-size: 28px;
+        font-weight: 300;
+        color: var(--accent-primary);
+        letter-spacing: -2px;
+        text-decoration: none;
+        transition: color var(--transition-fast);
+    }
+
+    .orion-logo:hover {
+        color: var(--text-primary);
+    }
+
+    .orion-nav {
+        display: flex;
+        gap: 8px;
+    }
+
+    .orion-nav-link {
+        padding: 8px 16px;
+        font-size: 13px;
+        color: var(--text-secondary);
+        text-decoration: none;
+        border-radius: var(--border-radius-md);
+        transition: all var(--transition-fast);
+    }
+
+    .orion-nav-link:hover {
+        color: var(--text-primary);
+        background: var(--bg-elevated);
+    }
+
+    .orion-nav-link.active {
+        color: var(--text-primary);
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+    }
+
+    .orion-header-right {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .orion-user-badge {
+        font-size: 11px;
+        color: var(--text-muted);
+    }
+
+    .orion-admin-badge {
+        font-size: 9px;
+        padding: 2px 6px;
+        background: var(--state-success);
+        color: #000;
+        border-radius: 3px;
+        font-weight: 600;
+    }
+</style>

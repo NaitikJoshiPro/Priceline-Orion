@@ -1,0 +1,65 @@
+<!--
+  ORION Theme State Partial
+  Single source for theme persistence logic
+  Include via: <?!= include('ThemeState'); ?>
+-->
+<script>
+    // Apply theme immediately to prevent flash (IIFE)
+    (function () {
+        const saved = localStorage.getItem('orion-theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', saved);
+    })();
+
+    // Theme management singleton
+    const Theme = {
+        current: 'dark',
+
+        init() {
+            const saved = localStorage.getItem('orion-theme') || 'dark';
+            this.current = saved;
+            document.documentElement.setAttribute('data-theme', saved);
+            this.updateToggleIcon();
+        },
+
+        set(theme) {
+            this.current = theme;
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('orion-theme', theme);
+            this.updateToggleIcon();
+        },
+
+        toggle() {
+            this.set(this.current === 'dark' ? 'light' : 'dark');
+        },
+
+        updateToggleIcon() {
+            // Update all toggle buttons on page
+            document.querySelectorAll('.theme-toggle').forEach(btn => {
+                const sunIcon = btn.querySelector('.icon-sun');
+                const moonIcon = btn.querySelector('.icon-moon');
+                if (sunIcon && moonIcon) {
+                    sunIcon.style.display = this.current === 'dark' ? 'block' : 'none';
+                    moonIcon.style.display = this.current === 'light' ? 'block' : 'none';
+                }
+            });
+        },
+
+        // Create toggle button HTML (professional SVG icons)
+        createToggleButton() {
+            return `
+                <button class="theme-toggle" onclick="Theme.toggle()" title="Toggle theme" aria-label="Toggle dark/light mode">
+                    <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="5"/>
+                        <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+                    </svg>
+                    <svg class="icon-moon" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z"/>
+                    </svg>
+                </button>
+            `;
+        }
+    };
+
+    // Auto-init on load
+    document.addEventListener('DOMContentLoaded', () => Theme.init());
+</script>

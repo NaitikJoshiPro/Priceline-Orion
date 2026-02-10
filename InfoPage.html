@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <base target="_top">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>
+        <?= pageTitle ?> - ØN
+    </title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
+
+    <!-- Global Theme -->
+    <?!= include('Theme'); ?>
+    <?!= include('ThemeState'); ?>
+
+    <style>
+        /* InfoPage-specific overrides */
+        html,
+        body {
+            height: auto;
+            overflow: auto;
+        }
+
+        .container {
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 80px 24px;
+            min-height: 100vh;
+        }
+
+        .logo {
+            font-size: 48px;
+            font-weight: 300;
+            color: var(--accent-primary);
+            margin-bottom: 48px;
+            letter-spacing: -2px;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .title {
+            font-size: 24px;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .updated {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 32px;
+        }
+
+        .section {
+            margin-bottom: 32px;
+        }
+
+        .section h2 {
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+        }
+
+        .section p {
+            color: var(--text-primary);
+            line-height: 1.7;
+            margin-bottom: 12px;
+        }
+
+        .section ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .section li {
+            color: var(--text-primary);
+            line-height: 1.7;
+            margin-bottom: 8px;
+            padding-left: 16px;
+            position: relative;
+        }
+
+        .section li::before {
+            content: "•";
+            color: var(--text-muted);
+            position: absolute;
+            left: 0;
+        }
+
+        .module-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin: 24px 0;
+        }
+
+        .module-card {
+            padding: 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .module-icon {
+            font-size: 32px;
+            margin-bottom: 8px;
+        }
+
+        .module-name {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .module-desc {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .creator {
+            padding: 24px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-top: 32px;
+        }
+
+        .creator-name {
+            font-size: 18px;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .creator-role {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        th,
+        td {
+            padding: 12px 16px;
+            text-align: left;
+            border: 1px solid var(--border);
+        }
+
+        th {
+            background: var(--bg-card);
+            color: var(--text-secondary);
+            font-size: 11px;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        td {
+            color: var(--text-primary);
+            font-size: 13px;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 48px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 13px;
+        }
+
+        .back-link:hover {
+            color: var(--text-primary);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div
+            style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: var(--spacing-lg);">
+            <a href="<?= ScriptApp.getService().getUrl() ?>" class="logo">Ø</a>
+            <button class="theme-toggle" onclick="Theme.toggle()" title="Toggle theme"
+                aria-label="Toggle dark/light mode">
+                <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="5" />
+                    <path
+                        d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+                </svg>
+                <svg class="icon-moon" viewBox="0 0 24 24" fill="currentColor">
+                    <path
+                        d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
+                </svg>
+            </button>
+        </div>
+
+        <? if (pageType === 'about') { ?>
+        <!-- ABOUT -->
+        <h1 class="title">About ORION</h1>
+
+        <div class="section">
+            <h2>What It Is</h2>
+            <p>ORION (Operations Reporting Intelligence Operational Nexus) is an enterprise-grade unified operations
+                platform built on Google Apps Script with Google Sheets as the backend datastore.</p>
+        </div>
+
+        <div class="section">
+            <h2>The Modules</h2>
+            <div class="module-grid">
+                <div class="module-card">
+                    <div class="module-icon">📈</div>
+                    <div class="module-name">RT</div>
+                    <div class="module-desc">Reporting</div>
+                </div>
+                <div class="module-card">
+                    <div class="module-icon">📋</div>
+                    <div class="module-name">CB</div>
+                    <div class="module-desc">Chargeback</div>
+                </div>
+                <div class="module-card">
+                    <div class="module-icon">✅</div>
+                    <div class="module-name">CBQA</div>
+                    <div class="module-desc">Chargeback QA</div>
+                </div>
+                <div class="module-card">
+                    <div class="module-icon">🔍</div>
+                    <div class="module-name">FAQ</div>
+                    <div class="module-desc">Fraud Analysis</div>
+                </div>
+                <div class="module-card">
+                    <div class="module-icon">📊</div>
+                    <div class="module-name">FAQA</div>
+                    <div class="module-desc">Fraud QA</div>
+                </div>
+                <div class="module-card">
+                    <div class="module-icon">📁</div>
+                    <div class="module-name">ON</div>
+                    <div class="module-desc">Operations</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Key Features</h2>
+            <ul>
+                <li>Role-based access control (Admin, Manager, Analyst, Viewer)</li>
+                <li>Complete audit trail for every action</li>
+                <li>RACI workflow for approval governance</li>
+                <li>AI-powered text analytics (GPT-4o-mini)</li>
+                <li>Config-first design—everything configurable</li>
+            </ul>
+        </div>
+
+        <div class="creator">
+            <div class="creator-name">Naitik Joshi</div>
+            <div class="creator-role">Creator / Architect</div>
+        </div>
+
+        <? } else if (pageType === 'privacy') { ?>
+        <!-- PRIVACY -->
+        <h1 class="title">Privacy Policy</h1>
+        <p class="updated">Last updated: January 2026</p>
+
+        <div class="section">
+            <h2>Data Collected</h2>
+            <ul>
+                <li>Google Workspace email (for authentication)</li>
+                <li>Report metadata, RACI assignments, workflow states</li>
+                <li>Chargeback rebuttal documents (CB module)</li>
+                <li>Audit logs of system actions</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>Where Data Is Stored</h2>
+            <p>All data stored in Google Sheets within your organization's Google Workspace. Subject to your org's data
+                governance policies.</p>
+        </div>
+
+        <div class="section">
+            <h2>Data Processing</h2>
+            <ul>
+                <li>All processing within Google Apps Script</li>
+                <li>AI processing via OpenAI API (optional)</li>
+                <li>No data sold or shared with third parties</li>
+            </ul>
+        </div>
+
+        <? } else if (pageType === 'data-retention') { ?>
+        <!-- DATA RETENTION -->
+        <h1 class="title">Data Retention Policy</h1>
+        <p class="updated">Last updated: January 2026</p>
+
+        <div class="section">
+            <h2>Retention by Data Type</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Data Type</th>
+                        <th>Retention</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Reports</td>
+                        <td>Indefinite</td>
+                        <td>Until admin deletes</td>
+                    </tr>
+                    <tr>
+                        <td>Audit Logs</td>
+                        <td>Indefinite</td>
+                        <td>Never auto-deleted</td>
+                    </tr>
+                    <tr>
+                        <td>Users</td>
+                        <td>Until Deactivated</td>
+                        <td>Admin deactivates</td>
+                    </tr>
+                    <tr>
+                        <td>CB Documents</td>
+                        <td>Indefinite</td>
+                        <td>Raw text optional</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="section">
+            <h2>Deletion Rights</h2>
+            <ul>
+                <li>Admins can delete or deactivate reports</li>
+                <li>Soft-delete is recoverable</li>
+                <li>Hard deletion is permanent</li>
+                <li>Audit logs of deletions are retained</li>
+            </ul>
+        </div>
+
+        <? } ?>
+
+        <a href="<?= ScriptApp.getService().getUrl() ?>" class="back-link">← Back to Home</a>
+    </div>
+</body>
+
+</html>

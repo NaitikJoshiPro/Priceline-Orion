@@ -1,0 +1,7 @@
+.clasp.json
+.claspignore
+OldFiles/
+*.backup
+nukeaction
+addition
+nutsack

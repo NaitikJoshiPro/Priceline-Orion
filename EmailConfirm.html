@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <base target="_top">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Email Confirmations</title>
+
+    <!-- Global Theme -->
+    <?!= include('Theme'); ?>
+    <?!= include('ThemeState'); ?>
+
+    <style>
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .ec-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg-secondary);
+        }
+
+        .ec-header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .ec-logo {
+            font-size: 32px;
+            font-weight: 300;
+            color: var(--text-primary);
+            text-decoration: none;
+        }
+
+        .ec-logo:hover {
+            color: var(--state-success);
+        }
+
+        .ec-page-title {
+            font-size: 18px;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .ec-header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .ec-back-btn {
+            padding: 8px 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .ec-back-btn:hover {
+            border-color: var(--border-hover);
+            color: var(--text-primary);
+        }
+
+        .ec-container {
+            flex: 1;
+            display: flex;
+            gap: 24px;
+            padding: 24px;
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .ec-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+        }
+
+        .ec-pending {
+            flex: 1;
+            max-width: 500px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .ec-table-wrapper {
+            flex: 1;
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+        }
+
+        .ec-upload {
+            flex: 1;
+        }
+
+        .ec-section h2 {
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Pending Items Table */
+        .ec-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .ec-table th {
+            text-align: left;
+            padding: 10px 12px;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .ec-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border);
+            font-size: 14px;
+            color: var(--text-primary);
+        }
+
+        .ec-table tr:hover td {
+            background: var(--bg-elevated);
+        }
+
+        .ec-table .mono {
+            font-family: var(--font-mono);
+        }
+
+        .ec-status {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .ec-status.pending {
+            background: rgba(255, 193, 7, 0.15);
+            color: #ffc107;
+        }
+
+        .ec-status.completed {
+            background: rgba(76, 175, 80, 0.15);
+            color: #4caf50;
+        }
+
+        /* Upload Area */
+        .ec-drop-zone {
+            border: 2px dashed var(--border);
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            transition: all 0.3s;
+            cursor: pointer;
+            margin-bottom: 16px;
+        }
+
+        .ec-drop-zone:hover,
+        .ec-drop-zone.dragover {
+            border-color: var(--accent);
+            background: var(--accent-dim);
+        }
+
+        .ec-drop-zone-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+
+        .ec-drop-zone-text {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .ec-drop-zone-hint {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .ec-file-input {
+            display: none;
+        }
+
+        /* File List */
+        .ec-file-list {
+            margin-top: 16px;
+        }
+
+        .ec-file-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 12px;
+            background: var(--bg-elevated);
+            border-radius: 6px;
+            margin-bottom: 8px;
+        }
+
+        .ec-file-name {
+            font-size: 13px;
+            color: var(--text-primary);
+            font-family: var(--font-mono);
+        }
+
+        .ec-file-remove {
+            background: none;
+            border: none;
+            color: var(--danger);
+            cursor: pointer;
+            font-size: 18px;
+            padding: 0;
+            line-height: 1;
+        }
+
+        .ec-upload-btn {
+            width: 100%;
+            padding: 12px 24px;
+            background: var(--accent-primary);
+            border: none;
+            border-radius: 6px;
+            color: var(--bg-primary);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 16px;
+        }
+
+        .ec-upload-btn:hover {
+            background: var(--state-success);
+        }
+
+        .ec-upload-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .ec-message {
+            padding: 12px;
+            border-radius: 6px;
+            margin-top: 16px;
+            font-size: 13px;
+        }
+
+        .ec-message.success {
+            background: rgba(76, 175, 80, 0.15);
+            color: #4caf50;
+        }
+
+        .ec-message.error {
+            background: rgba(244, 67, 54, 0.15);
+            color: #f44336;
+        }
+
+        .ec-empty {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-muted);
+        }
+
+        .ec-refresh-btn {
+            padding: 8px 16px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .ec-refresh-btn:hover {
+            border-color: var(--border-hover);
+        }
+
+        @media (max-width: 900px) {
+            .ec-container {
+                flex-direction: column;
+            }
+
+            .ec-pending {
+                max-width: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Header -->
+    <header class="ec-header">
+        <div class="ec-header-left">
+            <a href="<?= ScriptApp.getService().getUrl() ?>" class="ec-logo">Ø</a>
+            <span class="ec-page-title">Email Confirmations</span>
+        </div>
+        <div class="ec-header-right">
+            <button class="theme-toggle" onclick="Theme.toggle()" title="Toggle theme">
+                <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="5" />
+                    <path
+                        d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+                </svg>
+                <svg class="icon-moon" viewBox="0 0 24 24" fill="currentColor">
+                    <path
+                        d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
+                </svg>
+            </button>
+            <a href="<?= ScriptApp.getService().getUrl() ?>?page=cb" class="ec-back-btn">← Back to Chargeback</a>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="ec-container">
+        <!-- Pending Items -->
+        <section class="ec-section ec-pending">
+            <h2>
+                📋 My Pending Items
+                <button class="ec-refresh-btn" onclick="loadPendingItems()">🔄 Refresh</button>
+            </h2>
+            <div id="pendingContainer">
+                <div class="ec-empty">Loading...</div>
+            </div>
+        </section>
+
+        <!-- Upload Section -->
+        <section class="ec-section ec-upload">
+            <h2>📤 Upload Email Confirmations</h2>
+
+            <div class="ec-drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+                <div class="ec-drop-zone-icon">📧</div>
+                <div class="ec-drop-zone-text">Drop PDF files here or click to browse</div>
+                <div class="ec-drop-zone-hint">Files should be named with the ITN number (e.g., 12345678.pdf)</div>
+            </div>
+
+            <input type="file" id="fileInput" class="ec-file-input" multiple accept="application/pdf">
+
+            <div class="ec-file-list" id="fileList"></div>
+
+            <button class="ec-upload-btn" id="uploadBtn" onclick="uploadFiles()" disabled>
+                Upload Files
+            </button>
+
+            <div id="messageContainer"></div>
+        </section>
+    </div>
+
+    <script>
+        let selectedFiles = [];
+
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', function () {
+            loadPendingItems();
+            setupDragAndDrop();
+            setupFileInput();
+        });
+
+        function loadPendingItems() {
+            const container = document.getElementById('pendingContainer');
+            container.innerHTML = '<div class="ec-empty">Loading...</div>';
+
+            google.script.run
+                .withSuccessHandler(function (items) {
+                    if (!items || items.length === 0) {
+                        container.innerHTML = '<div class="ec-empty">No pending items</div>';
+                        return;
+                    }
+
+                    let html = '<div class="ec-table-wrapper"><table class="ec-table"><thead><tr>' +
+                        '<th>S.No</th><th>ITN</th><th>Added</th><th>Due</th><th>Status</th>' +
+                        '</tr></thead><tbody>';
+
+                    items.forEach(function (item, index) {
+                        html += '<tr>' +
+                            '<td class="mono">' + (index + 1) + '</td>' +
+                            '<td class="mono">' + item.itn + '</td>' +
+                            '<td>' + item.addedDt + '</td>' +
+                            '<td>' + item.dueDt + '</td>' +
+                            '<td><span class="ec-status pending">Pending</span></td>' +
+                            '</tr>';
+                    });
+
+                    html += '</tbody></table></div>';
+                    container.innerHTML = html;
+                })
+                .withFailureHandler(function (error) {
+                    container.innerHTML = '<div class="ec-empty">Error: ' + error.message + '</div>';
+                })
+                .ecGetPendingItems();
+        }
+
+        function setupDragAndDrop() {
+            const dropZone = document.getElementById('dropZone');
+
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, preventDefaults, false);
+            });
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropZone.addEventListener(eventName, () => dropZone.classList.add('dragover'), false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, () => dropZone.classList.remove('dragover'), false);
+            });
+
+            dropZone.addEventListener('drop', function (e) {
+                const files = e.dataTransfer.files;
+                handleFiles(files);
+            }, false);
+        }
+
+        function setupFileInput() {
+            document.getElementById('fileInput').addEventListener('change', function (e) {
+                handleFiles(e.target.files);
+            });
+        }
+
+        function handleFiles(files) {
+            Array.from(files).forEach(file => {
+                if (file.type === 'application/pdf') {
+                    // Avoid duplicates
+                    if (!selectedFiles.find(f => f.name === file.name)) {
+                        selectedFiles.push(file);
+                    }
+                }
+            });
+            updateFileList();
+        }
+
+        function updateFileList() {
+            const container = document.getElementById('fileList');
+            const uploadBtn = document.getElementById('uploadBtn');
+
+            if (selectedFiles.length === 0) {
+                container.innerHTML = '';
+                uploadBtn.disabled = true;
+                return;
+            }
+
+            uploadBtn.disabled = false;
+
+            let html = '';
+            selectedFiles.forEach((file, index) => {
+                html += '<div class="ec-file-item">' +
+                    '<span class="ec-file-name">' + file.name + '</span>' +
+                    '<button class="ec-file-remove" onclick="removeFile(' + index + ')">×</button>' +
+                    '</div>';
+            });
+
+            container.innerHTML = html;
+        }
+
+        function removeFile(index) {
+            selectedFiles.splice(index, 1);
+            updateFileList();
+        }
+
+        async function uploadFiles() {
+            if (selectedFiles.length === 0) return;
+
+            const uploadBtn = document.getElementById('uploadBtn');
+            const msgContainer = document.getElementById('messageContainer');
+
+            uploadBtn.disabled = true;
+            uploadBtn.textContent = 'Uploading...';
+            msgContainer.innerHTML = '';
+
+            try {
+                // Convert files to base64
+                const fileData = await Promise.all(selectedFiles.map(async file => {
+                    const base64 = await fileToBase64(file);
+                    return {
+                        name: file.name,
+                        mimeType: file.type,
+                        content: base64
+                    };
+                }));
+
+                google.script.run
+                    .withSuccessHandler(function (result) {
+                        uploadBtn.textContent = 'Upload Files';
+                        uploadBtn.disabled = true;
+                        selectedFiles = [];
+                        updateFileList();
+
+                        let msg = result.message;
+                        if (result.updated && result.updated.length > 0) {
+                            msg += ' Updated ITNs: ' + result.updated.join(', ');
+                        }
+
+                        msgContainer.innerHTML = '<div class="ec-message success">' + msg + '</div>';
+
+                        // Refresh pending items
+                        setTimeout(loadPendingItems, 1000);
+                    })
+                    .withFailureHandler(function (error) {
+                        uploadBtn.textContent = 'Upload Files';
+                        uploadBtn.disabled = false;
+                        msgContainer.innerHTML = '<div class="ec-message error">Error: ' + error.message + '</div>';
+                    })
+                    .ecUploadFiles({ files: fileData });
+
+            } catch (error) {
+                uploadBtn.textContent = 'Upload Files';
+                uploadBtn.disabled = false;
+                msgContainer.innerHTML = '<div class="ec-message error">Error: ' + error.message + '</div>';
+            }
+        }
+
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => {
+                    // Remove data URL prefix
+                    const base64 = reader.result.split(',')[1];
+                    resolve(base64);
+                };
+                reader.onerror = error => reject(error);
+            });
+        }
+    </script>
+</body>
+
+</html>

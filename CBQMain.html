@@ -1,0 +1,1336 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <base target="_top">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ØN - Text Analytics</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
+
+    <!-- Global Theme -->
+    <?!= include('Theme'); ?>
+    <?!= include('ThemeState'); ?>
+
+    <style>
+        /* CBQMain-specific styles */
+        .hidden {
+            display: none !important;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .app {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 24px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 300;
+            color: var(--accent-primary);
+            letter-spacing: -2px;
+            text-decoration: none;
+        }
+
+        .nav {
+            display: flex;
+            gap: 8px;
+        }
+
+        .nav-link {
+            padding: 8px 16px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            border-radius: 6px;
+            transition: all 150ms;
+        }
+
+        .nav-link:hover {
+            color: var(--text-primary);
+            background: var(--bg-elevated);
+        }
+
+        .nav-link.active {
+            color: var(--text-primary);
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-badge {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .admin-badge {
+            font-size: 9px;
+            padding: 2px 6px;
+            background: var(--positive);
+            color: #000;
+            border-radius: 3px;
+            font-weight: 600;
+        }
+
+        .icon-btn {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 150ms;
+            background: transparent;
+            border: none;
+            font-size: 16px;
+        }
+
+        .icon-btn:hover {
+            background: var(--bg-elevated);
+            color: var(--text-primary);
+        }
+
+        .main {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 280px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            overflow-y: auto;
+            padding: 16px;
+        }
+
+        .sidebar-section {
+            margin-bottom: 24px;
+        }
+
+        .sidebar-title {
+            font-size: 10px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+        }
+
+        .content {
+            flex: 1;
+            padding: 24px;
+            overflow-y: auto;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+        }
+
+        .tab {
+            padding: 10px 20px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 150ms;
+        }
+
+        .tab:hover {
+            border-color: var(--border-hover);
+            color: var(--text-primary);
+        }
+
+        .tab.active {
+            background: var(--accent-primary);
+            color: var(--bg-primary);
+            border-color: var(--accent-primary);
+        }
+
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-box {
+            padding: 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 32px;
+            font-weight: 600;
+            font-family: var(--font-data);
+        }
+
+        .stat-label {
+            font-size: 10px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin-top: 4px;
+        }
+
+        .upload-zone {
+            padding: 40px;
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 150ms;
+            margin-bottom: 24px;
+        }
+
+        .upload-zone:hover {
+            border-color: var(--accent-primary);
+            background: var(--bg-elevated);
+        }
+
+        .upload-zone.dragover {
+            border-color: var(--positive);
+            background: rgba(34, 197, 94, 0.1);
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+            opacity: 0.5;
+        }
+
+        .upload-title {
+            font-size: 16px;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+
+        .upload-subtitle {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 10px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-input,
+        .form-select,
+        .form-textarea {
+            width: 100%;
+            padding: 10px 12px;
+            font-family: var(--font-ui);
+            font-size: 14px;
+            color: var(--text-primary);
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+        }
+
+        .form-input:focus,
+        .form-select:focus,
+        .form-textarea:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+        }
+
+        .form-textarea {
+            min-height: 150px;
+            resize: vertical;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 18px;
+            font-family: var(--font-ui);
+            font-size: 13px;
+            font-weight: 500;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            cursor: pointer;
+            background: transparent;
+            color: var(--text-primary);
+            transition: all 150ms;
+        }
+
+        .btn:hover {
+            border-color: var(--border-hover);
+            background: var(--bg-elevated);
+        }
+
+        .btn-primary {
+            background: var(--accent-primary);
+            color: var(--bg-primary);
+            border-color: var(--accent-primary);
+        }
+
+        .btn-primary:hover {
+            opacity: 0.9;
+        }
+
+        .btn-success {
+            background: var(--positive);
+            color: #000;
+            border-color: var(--positive);
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        .word-cloud {
+            min-height: 400px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 24px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .word-item {
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-family: var(--font-data);
+            cursor: pointer;
+            transition: transform 0.15s;
+        }
+
+        .word-item:hover {
+            transform: scale(1.1);
+        }
+
+        .word-item.positive {
+            background: rgba(34, 197, 94, 0.2);
+            color: var(--positive);
+        }
+
+        .word-item.negative {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--negative);
+        }
+
+        .word-item.neutral {
+            background: var(--bg-elevated);
+            color: var(--text-secondary);
+        }
+
+        .queue-list {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+        }
+
+        .queue-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .queue-item:last-child {
+            border-bottom: none;
+        }
+
+        .queue-name {
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .queue-meta {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .queue-status {
+            font-size: 10px;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .queue-status.queued {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--neutral);
+        }
+
+        .queue-status.processing {
+            background: rgba(99, 102, 241, 0.2);
+            color: #6366f1;
+        }
+
+        .queue-status.completed {
+            background: rgba(34, 197, 94, 0.2);
+            color: var(--positive);
+        }
+
+        .queue-status.error {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--negative);
+        }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            padding: 48px;
+            color: var(--text-muted);
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border);
+            border-top-color: var(--accent-primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            padding: 12px 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 13px;
+            z-index: 2000;
+        }
+
+        .toast.success {
+            border-color: var(--positive);
+        }
+
+        .toast.error {
+            border-color: var(--negative);
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            width: 100%;
+            max-width: 440px;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .modal-header h3 {
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 24px;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .modal-close:hover {
+            color: var(--text-primary);
+        }
+
+        .modal-body {
+            padding: 24px;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            padding: 16px 24px;
+            border-top: 1px solid var(--border);
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                display: none;
+            }
+
+            .stats-row {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app">
+        <header class="header">
+            <div class="header-left">
+                <a href="<?= ScriptApp.getService().getUrl() ?>" class="logo">Ø</a>
+                <nav class="nav">
+                    <a class="nav-link active" href="<?= ScriptApp.getService().getUrl() ?>?page=cbq">Text Analytics</a>
+                </nav>
+            </div>
+            <div class="header-right">
+                <span class="user-badge">
+                    <?= user ?>
+                </span>
+                <span class="admin-badge">Admin</span>
+                <button class="theme-toggle" onclick="Theme.toggle()" title="Toggle theme"
+                    aria-label="Toggle dark/light mode">
+                    <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="5" />
+                        <path
+                            d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+                    </svg>
+                    <svg class="icon-moon" viewBox="0 0 24 24" fill="currentColor">
+                        <path
+                            d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
+                    </svg>
+                </button>
+            </div>
+        </header>
+
+        <div class="main">
+            <aside class="sidebar">
+                <div class="sidebar-section">
+                    <div class="sidebar-title">Queue Status</div>
+                    <div id="queue-stats">
+                        <div class="loading">
+                            <div class="spinner"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="sidebar-section">
+                    <div class="sidebar-title">Filters</div>
+                    <div class="form-group">
+                        <label class="form-label">Reason Code</label>
+                        <select class="form-select" id="filter-reason" onchange="applyFilters()">
+                            <option value="GLOBAL">All (Global)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">View Mode</label>
+                        <select class="form-select" id="filter-mode" onchange="applyFilters()">
+                            <option value="signal">By Signal Strength</option>
+                            <option value="positive">Positive Only</option>
+                            <option value="negative">Negative Only</option>
+                            <option value="frequency">By Frequency</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="sidebar-section">
+                    <div class="sidebar-title">Actions</div>
+                    <button class="btn btn-sm" style="width:100%;margin-bottom:8px;" onclick="processQueue()">⚡ Process
+                        Queue</button>
+                    <button class="btn btn-sm" style="width:100%;margin-bottom:8px;" onclick="recalculateStats()">📊
+                        Recalculate Stats</button>
+                    <button class="btn btn-sm" style="width:100%;" onclick="exportStats()">↓ Export CSV</button>
+                </div>
+            </aside>
+
+            <div class="content">
+                <div class="tabs">
+                    <div class="tab active" onclick="switchTab('upload')">📤 AI Upload</div>
+                    <div class="tab" onclick="switchTab('analytics')">📊 Word Analytics</div>
+                    <div class="tab" onclick="switchTab('filtered')">🚫 Filtered Words</div>
+                    <div class="tab" onclick="switchTab('queue')">📋 Queue</div>
+                </div>
+
+                <!-- Upload Tab -->
+                <div id="tab-upload">
+                    <div class="stats-row">
+                        <div class="stat-box">
+                            <div class="stat-number" id="stat-docs">-</div>
+                            <div class="stat-label">Documents</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-number" id="stat-words">-</div>
+                            <div class="stat-label">Unique Words</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-number" style="color:var(--positive)" id="stat-positive">-</div>
+                            <div class="stat-label">Positive Signal</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-number" style="color:var(--negative)" id="stat-negative">-</div>
+                            <div class="stat-label">Negative Signal</div>
+                        </div>
+                    </div>
+
+                    <!-- Primary: Folder Upload -->
+                    <div
+                        style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:20px;margin-bottom:20px;">
+                        <h3 style="margin:0 0 16px 0;font-size:14px;color:var(--text-primary);">📁 Batch Upload from
+                            Google Drive</h3>
+
+                        <div class="form-group">
+                            <label class="form-label">Google Drive Folder ID *</label>
+                            <input type="text" class="form-input" id="folder-id-main"
+                                placeholder="Paste folder ID from Drive URL (e.g. 1aBcDeFgHiJkLmNoPqRsTuVwXyZ)"
+                                style="font-family:monospace;">
+                            <p style="font-size:11px;color:var(--text-muted);margin-top:6px;">
+                                📌 Get this from your Google Drive folder URL after <code>/folders/</code>
+                            </p>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Outcome Classification *</label>
+                            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
+                                <button type="button" class="outcome-btn" id="outcome-72h-win"
+                                    onclick="selectOutcome('AUTO_WIN_72H')"
+                                    style="padding:16px;border:2px solid var(--border);border-radius:8px;background:var(--bg-elevated);cursor:pointer;text-align:center;transition:all 0.2s;">
+                                    <div style="font-size:24px;margin-bottom:8px;">✅</div>
+                                    <div style="font-weight:600;color:var(--positive);margin-bottom:4px;">72h Perfect
+                                    </div>
+                                    <div style="font-size:11px;color:var(--text-muted);">Strong positive outcome</div>
+                                </button>
+                                <button type="button" class="outcome-btn" id="outcome-30-90"
+                                    onclick="selectOutcome('WIN_30_90D')"
+                                    style="padding:16px;border:2px solid var(--border);border-radius:8px;background:var(--bg-elevated);cursor:pointer;text-align:center;transition:all 0.2s;">
+                                    <div style="font-size:24px;margin-bottom:8px;">📊</div>
+                                    <div style="font-weight:600;color:var(--text-primary);margin-bottom:4px;">30-90 Good
+                                    </div>
+                                    <div style="font-size:11px;color:var(--text-muted);">Needs review, eventual win
+                                    </div>
+                                </button>
+                                <button type="button" class="outcome-btn" id="outcome-72h-reject"
+                                    onclick="selectOutcome('AUTO_REJECT_72H')"
+                                    style="padding:16px;border:2px solid var(--border);border-radius:8px;background:var(--bg-elevated);cursor:pointer;text-align:center;transition:all 0.2s;">
+                                    <div style="font-size:24px;margin-bottom:8px;">❌</div>
+                                    <div style="font-weight:600;color:var(--negative);margin-bottom:4px;">72h Bad</div>
+                                    <div style="font-size:11px;color:var(--text-muted);">Weak evidence, likely loss
+                                    </div>
+                                </button>
+                            </div>
+                            <input type="hidden" id="selected-outcome" value="">
+                        </div>
+
+                        <button class="btn btn-success" onclick="submitFolderUploadMain()"
+                            style="width:100%;padding:14px;font-size:14px;">
+                            🚀 Process Folder with AI
+                        </button>
+
+                        <div id="folder-progress" class="hidden"
+                            style="margin-top:16px;padding:12px;background:var(--bg-elevated);border-radius:6px;">
+                            <div style="display:flex;align-items:center;gap:12px;">
+                                <div class="spinner"></div>
+                                <span id="folder-progress-text">Processing...</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Results Table (shows after processing) -->
+                    <div id="results-section" class="hidden"
+                        style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:20px;margin-bottom:20px;">
+                        <h3 style="margin:0 0 16px 0;font-size:14px;color:var(--text-primary);">📋 Processing Results
+                        </h3>
+                        <div id="results-table" style="overflow-x:auto;"></div>
+                    </div>
+
+                    <!-- Alternative: Text Paste (collapsed by default) -->
+                    <details
+                        style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;margin-bottom:20px;">
+                        <summary style="padding:16px;cursor:pointer;font-size:13px;color:var(--text-secondary);">
+                            📝 Alternative: Paste Single Document Text
+                        </summary>
+                        <div style="padding:0 16px 16px 16px;">
+                            <div class="form-group">
+                                <label class="form-label">Rebuttal Text</label>
+                                <textarea class="form-textarea" id="upload-text"
+                                    placeholder="Paste rebuttal document text here..."></textarea>
+                            </div>
+                            <button class="btn" onclick="submitTextUpload()" style="width:100%;">📤 Upload Text</button>
+                        </div>
+                    </details>
+                </div>
+
+                <!-- Analytics Tab -->
+                <div id="tab-analytics" class="hidden">
+                    <div class="tabs" style="margin-bottom:16px;">
+                        <div class="tab active" onclick="switchVizTab('wordcloud')">☁️ Word Cloud</div>
+                        <div class="tab" onclick="switchVizTab('heatmap')">🔥 Heat Map</div>
+                        <div class="tab" onclick="switchVizTab('bubble')">🫧 Bubble Chart</div>
+                    </div>
+
+                    <!-- Word Cloud View -->
+                    <div id="viz-wordcloud">
+                        <h3 style="margin-bottom:16px;font-size:16px;">Word Cloud - Signal Analysis</h3>
+                        <div class="word-cloud" id="word-cloud">
+                            <div class="loading">
+                                <div class="spinner"></div><span>Loading word data...</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Heat Map View -->
+                    <div id="viz-heatmap" class="hidden">
+                        <h3 style="margin-bottom:16px;font-size:16px;">Heat Map - Word Frequency by Outcome</h3>
+                        <div id="heatmap-container"
+                            style="min-height:400px;background:var(--bg-card);border-radius:8px;padding:20px;">
+                            <div class="loading">
+                                <div class="spinner"></div><span>Loading heat map...</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bubble Chart View -->
+                    <div id="viz-bubble" class="hidden">
+                        <h3 style="margin-bottom:16px;font-size:16px;">Bubble Chart - Word Importance</h3>
+                        <div id="bubble-container"
+                            style="min-height:400px;background:var(--bg-card);border-radius:8px;padding:20px;">
+                            <div class="loading">
+                                <div class="spinner"></div><span>Loading bubble chart...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filtered Words Tab -->
+                <div id="tab-filtered" class="hidden">
+                    <h3 style="margin-bottom:16px;font-size:16px;">Filtered Words Management</h3>
+                    <p style="font-size:12px;color:var(--text-muted);margin-bottom:16px;">Words below are excluded from
+                        word cloud and analytics. These include company names, stopwords, and dates.</p>
+                    <div style="display:flex;gap:12px;margin-bottom:16px;">
+                        <input type="text" class="form-input" id="new-filter-word" placeholder="Add word to filter..."
+                            style="flex:1;">
+                        <button class="btn btn-success btn-sm" onclick="addFilteredWord()">+ Add</button>
+                        <button class="btn btn-sm" onclick="initializeDefaultFilters()">Reset Defaults</button>
+                    </div>
+                    <div class="queue-list" id="filtered-words-list">
+                        <div class="loading">
+                            <div class="spinner"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Queue Tab -->
+                <div id="tab-queue" class="hidden">
+                    <h3 style="margin-bottom:16px;font-size:16px;">Processing Queue</h3>
+                    <div class="queue-list" id="queue-list">
+                        <div class="loading">
+                            <div class="spinner"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast hidden" id="toast"></div>
+
+    <!-- Folder Upload Modal -->
+    <div class="modal-overlay hidden" id="folder-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Upload from Drive Folder</h3>
+                <button class="modal-close" onclick="closeFolderModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Google Drive Folder ID *</label>
+                    <input type="text" class="form-input" id="folder-id-input"
+                        placeholder="e.g. 1aBcDeFgHiJkLmNoPqRsTuVwXyZ">
+                    <p style="font-size:11px;color:var(--text-muted);margin-top:6px;">Find this in the folder URL after
+                        /folders/</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" onclick="closeFolderModal()">Cancel</button>
+                <button class="btn btn-success" onclick="submitFolderUpload()">📁 Upload PDFs</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        var App = {
+            currentTab: 'upload',
+            config: null,
+            queueStatus: null,
+            wordData: null
+        };
+
+        document.addEventListener('DOMContentLoaded', function () {
+            loadTheme();
+            loadConfig();
+            loadQueueStatus();
+            loadStats();
+        });
+
+        function toggleTheme() {
+            var current = document.body.getAttribute('data-theme') || 'dark';
+            var next = current === 'dark' ? 'light' : 'dark';
+            document.body.setAttribute('data-theme', next);
+            localStorage.setItem('theme', next);
+        }
+        function loadTheme() {
+            var saved = localStorage.getItem('theme') || 'dark';
+            document.body.setAttribute('data-theme', saved);
+        }
+
+        function switchTab(tab) {
+            App.currentTab = tab;
+            document.querySelectorAll('.tab').forEach(function (t, i) {
+                t.classList.toggle('active', ['upload', 'analytics', 'filtered', 'queue'][i] === tab);
+            });
+            document.getElementById('tab-upload').classList.toggle('hidden', tab !== 'upload');
+            document.getElementById('tab-analytics').classList.toggle('hidden', tab !== 'analytics');
+            document.getElementById('tab-filtered').classList.toggle('hidden', tab !== 'filtered');
+            document.getElementById('tab-queue').classList.toggle('hidden', tab !== 'queue');
+
+            if (tab === 'analytics' && !App.wordData) loadWordCloud();
+            if (tab === 'queue') loadQueueList();
+            if (tab === 'filtered') loadFilteredWords();
+        }
+
+        function loadConfig() {
+            google.script.run.withSuccessHandler(function (config) {
+                App.config = config;
+                // AI-powered: no need to populate reason codes dropdown
+                // Display AI model info
+                console.log('AI Enabled:', config.aiEnabled, 'Model:', config.aiModel);
+            }).withFailureHandler(function (e) {
+                showDetailedError('loadConfig', e);
+            }).cbqGetConfig();
+        }
+
+        function loadQueueStatus() {
+            google.script.run.withSuccessHandler(function (status) {
+                App.queueStatus = status;
+                document.getElementById('queue-stats').innerHTML =
+                    '<div style="font-size:12px;color:var(--text-secondary);">' +
+                    '<div style="margin-bottom:8px;">Queued: <strong>' + status.queued + '</strong></div>' +
+                    '<div style="margin-bottom:8px;">Processing: <strong>' + status.processing + '</strong></div>' +
+                    '<div style="margin-bottom:8px;">Completed: <strong style="color:var(--positive)">' + status.completed + '</strong></div>' +
+                    '<div>Errors: <strong style="color:var(--negative)">' + status.errors + '</strong></div></div>';
+            }).withFailureHandler(function (e) {
+                showDetailedError('loadQueueStatus', e);
+                document.getElementById('queue-stats').innerHTML = '<div style="color:var(--negative);font-size:11px;">Error loading status</div>';
+            }).cbqGetQueueStatus();
+        }
+
+        function loadStats() {
+            google.script.run.withSuccessHandler(function (summary) {
+                document.getElementById('stat-docs').textContent = summary.totalWords > 0 ? Math.ceil(summary.totalWords / 50) : 0;
+                document.getElementById('stat-words').textContent = summary.totalWords || 0;
+                document.getElementById('stat-positive').textContent = summary.positiveWords || 0;
+                document.getElementById('stat-negative').textContent = summary.negativeWords || 0;
+            }).withFailureHandler(function (e) {
+                showDetailedError('loadStats', e);
+            }).cbqGetStatsSummary();
+        }
+
+        function loadWordCloud() {
+            var options = {
+                reasonCode: document.getElementById('filter-reason').value || 'GLOBAL',
+                mode: document.getElementById('filter-mode').value || 'signal',
+                limit: 100
+            };
+            document.getElementById('word-cloud').innerHTML = '<div class="loading"><div class="spinner"></div><span>Loading...</span></div>';
+
+            google.script.run.withSuccessHandler(function (data) {
+                App.wordData = data;
+                renderWordCloud(data);
+            }).withFailureHandler(function (e) {
+                document.getElementById('word-cloud').innerHTML = '<div style="color:var(--text-muted);">No data yet. Upload documents first.</div>';
+            }).cbqGetWordCloudData(options);
+        }
+
+        function renderWordCloud(data) {
+            if (!data || data.length === 0) {
+                document.getElementById('word-cloud').innerHTML = '<div style="color:var(--text-muted);">No word data available. Upload and process documents first.</div>';
+                return;
+            }
+            var html = data.map(function (w) {
+                var cls = w.value > 0 ? 'positive' : w.value < 0 ? 'negative' : 'neutral';
+                var fontSize = Math.max(12, Math.min(36, w.size / 2.5));
+                return '<span class="word-item ' + cls + '" style="font-size:' + fontSize + 'px" title="Signal: ' + w.value + '">' + escapeHtml(w.word) + '</span>';
+            }).join('');
+            document.getElementById('word-cloud').innerHTML = html;
+        }
+
+        function loadQueueList() {
+            google.script.run.withSuccessHandler(function (docs) {
+                if (!docs || docs.length === 0) {
+                    document.getElementById('queue-list').innerHTML = '<div class="queue-item"><span style="color:var(--text-muted)">No documents in queue</span></div>';
+                    return;
+                }
+                var html = docs.slice(0, 50).map(function (d) {
+                    return '<div class="queue-item">' +
+                        '<div><div class="queue-name">' + escapeHtml(d.filename) + '</div>' +
+                        '<div class="queue-meta">' + d.outcomeLabel + ' | ' + d.reasonCode + '</div></div>' +
+                        '<span class="queue-status ' + d.status.toLowerCase() + '">' + d.status + '</span></div>';
+                }).join('');
+                document.getElementById('queue-list').innerHTML = html;
+            }).cbqGetDocuments({});
+        }
+
+        function applyFilters() {
+            if (App.currentTab === 'analytics') loadWordCloud();
+        }
+
+        function handleDragOver(e) { e.preventDefault(); e.currentTarget.classList.add('dragover'); }
+        function handleDragLeave(e) { e.currentTarget.classList.remove('dragover'); }
+        function handleDrop(e) { e.preventDefault(); e.currentTarget.classList.remove('dragover'); }
+
+        function submitTextUpload() {
+            var text = document.getElementById('upload-text').value.trim();
+            var batchType = document.getElementById('selected-outcome').value;
+
+            if (!text) { showToast('Please enter rebuttal text', 'error'); return; }
+            if (text.length < 50) { showToast('Text must be at least 50 characters for AI classification', 'error'); return; }
+            if (!batchType) { showToast('Please select an outcome classification first', 'error'); return; }
+
+            showToast('Processing with AI...', 'info');
+            google.script.run.withSuccessHandler(function (result) {
+                var msg = 'Uploaded! AI detected: ' + result.classification.reasonCode + ' (' + result.classification.cardType + ')';
+                showToast(msg, 'success');
+                document.getElementById('upload-text').value = '';
+                loadQueueStatus();
+                loadStats();
+            }).withFailureHandler(function (e) {
+                showToast('Failed: ' + e.message, 'error');
+            }).cbqUploadTextWithAI({
+                text: text,
+                batchType: batchType
+            });
+        }
+
+        // =====================================================
+        // New Revamped Functions
+        // =====================================================
+
+        function selectOutcome(outcome) {
+            document.getElementById('selected-outcome').value = outcome;
+            // Visual feedback - highlight selected button
+            document.querySelectorAll('.outcome-btn').forEach(function (btn) {
+                btn.style.borderColor = 'var(--border)';
+                btn.style.background = 'var(--bg-elevated)';
+            });
+            var btnId = {
+                'AUTO_WIN_72H': 'outcome-72h-win',
+                'WIN_30_90D': 'outcome-30-90',
+                'AUTO_REJECT_72H': 'outcome-72h-reject'
+            }[outcome];
+            if (btnId) {
+                var btn = document.getElementById(btnId);
+                btn.style.borderColor = 'var(--accent-primary)';
+                btn.style.background = 'var(--accent-dim)';
+            }
+        }
+
+        function submitFolderUploadMain() {
+            var folderId = document.getElementById('folder-id-main').value.trim();
+            var batchType = document.getElementById('selected-outcome').value;
+
+            if (!folderId) { showToast('Please enter a Google Drive folder ID', 'error'); return; }
+            if (!batchType) { showToast('Please select an outcome classification', 'error'); return; }
+
+            // Show progress
+            document.getElementById('folder-progress').classList.remove('hidden');
+            document.getElementById('folder-progress-text').textContent = 'Processing folder with AI...';
+
+            google.script.run.withSuccessHandler(function (result) {
+                document.getElementById('folder-progress').classList.add('hidden');
+                showToast(result.processed + '/' + result.total + ' PDFs processed successfully!', 'success');
+
+                // Show results
+                renderResults(result);
+                loadQueueStatus();
+                loadStats();
+            }).withFailureHandler(function (e) {
+                document.getElementById('folder-progress').classList.add('hidden');
+                showToast('Failed: ' + e.message, 'error');
+            }).cbqUploadFromFolderWithAI({
+                folderId: folderId,
+                batchType: batchType
+            });
+        }
+
+        function renderResults(result) {
+            var section = document.getElementById('results-section');
+            var container = document.getElementById('results-table');
+
+            if (!result.documents || result.documents.length === 0) {
+                container.innerHTML = '<p style="color:var(--text-muted);">No documents processed.</p>';
+                section.classList.remove('hidden');
+                return;
+            }
+
+            var html = '<table style="width:100%;border-collapse:collapse;font-size:12px;">' +
+                '<thead><tr style="background:var(--bg-elevated);">' +
+                '<th style="padding:10px;text-align:left;border-bottom:1px solid var(--border);">Filename</th>' +
+                '<th style="padding:10px;text-align:left;border-bottom:1px solid var(--border);">Reason Code</th>' +
+                '<th style="padding:10px;text-align:left;border-bottom:1px solid var(--border);">Card Type</th>' +
+                '<th style="padding:10px;text-align:left;border-bottom:1px solid var(--border);">Confidence</th>' +
+                '<th style="padding:10px;text-align:left;border-bottom:1px solid var(--border);">Status</th>' +
+                '</tr></thead><tbody>';
+
+            result.documents.forEach(function (doc) {
+                var statusColor = doc.success ? 'var(--positive)' : 'var(--negative)';
+                var statusText = doc.success ? '✓' : '✗ ' + (doc.error || 'Failed');
+                html += '<tr>' +
+                    '<td style="padding:8px;border-bottom:1px solid var(--border);">' + escapeHtml(doc.filename) + '</td>' +
+                    '<td style="padding:8px;border-bottom:1px solid var(--border);">' + (doc.reasonCode || '-') + '</td>' +
+                    '<td style="padding:8px;border-bottom:1px solid var(--border);">' + (doc.cardType || '-') + '</td>' +
+                    '<td style="padding:8px;border-bottom:1px solid var(--border);">' + (doc.confidence ? Math.round(doc.confidence * 100) + '%' : '-') + '</td>' +
+                    '<td style="padding:8px;border-bottom:1px solid var(--border);color:' + statusColor + ';">' + statusText + '</td>' +
+                    '</tr>';
+            });
+
+            html += '</tbody></table>';
+            html += '<p style="margin-top:12px;font-size:11px;color:var(--text-muted);">Processed: ' + result.processed + ' | Failed: ' + result.failed + ' | Total: ' + result.total + '</p>';
+
+            container.innerHTML = html;
+            section.classList.remove('hidden');
+        }
+
+        // Visualization Tab Switching
+        App.currentVizTab = 'wordcloud';
+
+        function switchVizTab(tab) {
+            App.currentVizTab = tab;
+            document.querySelectorAll('#tab-analytics .tabs .tab').forEach(function (t, i) {
+                t.classList.toggle('active', ['wordcloud', 'heatmap', 'bubble'][i] === tab);
+            });
+            document.getElementById('viz-wordcloud').classList.toggle('hidden', tab !== 'wordcloud');
+            document.getElementById('viz-heatmap').classList.toggle('hidden', tab !== 'heatmap');
+            document.getElementById('viz-bubble').classList.toggle('hidden', tab !== 'bubble');
+
+            if (tab === 'wordcloud' && !App.wordData) loadWordCloud();
+            if (tab === 'heatmap') loadHeatMap();
+            if (tab === 'bubble') loadBubbleChart();
+        }
+
+        function loadHeatMap() {
+            var container = document.getElementById('heatmap-container');
+            container.innerHTML = '<div class="loading"><div class="spinner"></div><span>Loading heat map...</span></div>';
+
+            google.script.run.withSuccessHandler(function (data) {
+                renderHeatMap(data);
+            }).withFailureHandler(function (e) {
+                container.innerHTML = '<div style="color:var(--text-muted);">No data available for heat map. Process documents first.</div>';
+            }).cbqGetWordCloudData({ reasonCode: 'GLOBAL', mode: 'frequency', limit: 50 });
+        }
+
+        function renderHeatMap(data) {
+            var container = document.getElementById('heatmap-container');
+            if (!data || data.length === 0) {
+                container.innerHTML = '<div style="color:var(--text-muted);">No data available. Upload and process documents first.</div>';
+                return;
+            }
+
+            // Simple heat map rendering using CSS grid
+            var maxOccur = Math.max.apply(null, data.map(function (w) { return w.size || 1; }));
+            var html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:4px;">';
+            data.slice(0, 50).forEach(function (w) {
+                var intensity = Math.min(1, (w.size || 1) / maxOccur);
+                var bgColor = w.value > 0 ?
+                    'rgba(76,175,80,' + (0.2 + intensity * 0.6) + ')' :
+                    w.value < 0 ?
+                        'rgba(244,67,54,' + (0.2 + intensity * 0.6) + ')' :
+                        'rgba(128,128,128,' + (0.2 + intensity * 0.4) + ')';
+                html += '<div style="padding:8px;background:' + bgColor + ';border-radius:4px;text-align:center;font-size:11px;" title="Freq: ' + (w.size || 0) + '">' +
+                    escapeHtml(w.word) + '</div>';
+            });
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        function loadBubbleChart() {
+            var container = document.getElementById('bubble-container');
+            container.innerHTML = '<div class="loading"><div class="spinner"></div><span>Loading bubble chart...</span></div>';
+
+            google.script.run.withSuccessHandler(function (data) {
+                renderBubbleChart(data);
+            }).withFailureHandler(function (e) {
+                container.innerHTML = '<div style="color:var(--text-muted);">No data available for bubble chart. Process documents first.</div>';
+            }).cbqGetBubbleChartData({ reasonCode: 'GLOBAL' });
+        }
+
+        function renderBubbleChart(data) {
+            var container = document.getElementById('bubble-container');
+            if (!data || data.length === 0) {
+                container.innerHTML = '<div style="color:var(--text-muted);">No data available. Upload and process documents first.</div>';
+                return;
+            }
+
+            // Simple bubble chart using absolute positioning
+            var html = '<div style="position:relative;height:400px;overflow:hidden;">';
+            var maxSize = Math.max.apply(null, data.map(function (w) { return w.size || 1; }));
+
+            data.slice(0, 30).forEach(function (w, i) {
+                var size = Math.max(40, Math.min(120, (w.size / maxSize) * 120));
+                var left = 10 + (i % 5) * 18;
+                var top = 10 + Math.floor(i / 5) * 18;
+                var color = w.value > 0 ? 'var(--positive)' : w.value < 0 ? 'var(--negative)' : 'var(--text-muted)';
+                html += '<div style="position:absolute;left:' + left + '%;top:' + top + '%;width:' + size + 'px;height:' + size + 'px;' +
+                    'border-radius:50%;background:' + color + ';opacity:0.7;display:flex;align-items:center;justify-content:center;' +
+                    'font-size:10px;color:#fff;text-align:center;overflow:hidden;padding:4px;" title="Signal: ' + w.value + '">' +
+                    escapeHtml(w.word.substring(0, 8)) + '</div>';
+            });
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        function showFolderUpload() {
+            // Legacy function - redirect to main folder input
+            document.getElementById('folder-id-main').focus();
+            showToast('Use the folder input above', 'info');
+        }
+
+        function closeFolderModal() {
+            document.getElementById('folder-modal').classList.add('hidden');
+        }
+
+        function submitFolderUpload() {
+            var folderId = document.getElementById('folder-id-input').value.trim();
+            if (!folderId) { showToast('Please enter a folder ID', 'error'); return; }
+
+            var batchType = document.getElementById('upload-outcome').value;
+
+            closeFolderModal();
+            showToast('Processing folder with AI...', 'info');
+            google.script.run.withSuccessHandler(function (result) {
+                showToast(result.processed + '/' + result.total + ' PDFs processed by AI', 'success');
+                loadQueueStatus();
+            }).withFailureHandler(function (e) {
+                showToast('Failed: ' + e.message, 'error');
+            }).cbqUploadFromFolderWithAI({
+                folderId: folderId,
+                batchType: batchType,
+                issuer: document.getElementById('upload-issuer').value,
+                dateRange: document.getElementById('upload-daterange').value
+            });
+        }
+
+        function processQueue() {
+            showToast('Processing queue...', 'info');
+            google.script.run.withSuccessHandler(function (result) {
+                showToast('Processed ' + result.succeeded + ' documents', 'success');
+                loadQueueStatus();
+                loadStats();
+            }).withFailureHandler(function (e) {
+                showToast('Failed: ' + e.message, 'error');
+            }).cbqProcessQueue(10);
+        }
+
+        function recalculateStats() {
+            var reasonCode = document.getElementById('filter-reason').value || 'GLOBAL';
+            showToast('Recalculating...', 'info');
+            google.script.run.withSuccessHandler(function (result) {
+                showToast('Updated ' + result.wordsUpdated + ' word stats', 'success');
+                loadStats();
+                if (App.currentTab === 'analytics') loadWordCloud();
+            }).withFailureHandler(function (e) {
+                showToast('Failed: ' + e.message, 'error');
+            }).cbqRecalculateStats(reasonCode);
+        }
+
+        function exportStats() {
+            var reasonCode = document.getElementById('filter-reason').value || 'GLOBAL';
+            showToast('Exporting...', 'info');
+            google.script.run.withSuccessHandler(function (data) {
+                var csv = data.headers.join(',') + '\n' + data.rows.map(function (r) {
+                    return r.map(function (c) { return '"' + String(c || '').replace(/"/g, '""') + '"'; }).join(',');
+                }).join('\n');
+                var blob = new Blob([csv], { type: 'text/csv' });
+                var a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = 'cbq_word_stats_' + reasonCode + '.csv';
+                a.click();
+                showToast('Exported!', 'success');
+            }).withFailureHandler(function (e) {
+                showToast('Failed: ' + e.message, 'error');
+            }).cbqExportStats(reasonCode);
+        }
+
+        function showDetailedError(source, error) {
+            var msg = error && error.message ? error.message : String(error);
+            var stack = error && error.stack ? '\n' + error.stack : '';
+            console.error('[CB Error] ' + source + ': ' + msg + stack);
+
+            // Show persistent error banner
+            var banner = document.getElementById('error-banner');
+            if (!banner) {
+                banner = document.createElement('div');
+                banner.id = 'error-banner';
+                banner.style.cssText = 'position:fixed;top:0;left:0;right:0;padding:12px 20px;background:var(--negative);color:#fff;font-size:12px;z-index:9999;display:flex;justify-content:space-between;align-items:center;';
+                document.body.insertBefore(banner, document.body.firstChild);
+            }
+            banner.innerHTML = '<span><strong>Error in ' + source + ':</strong> ' + escapeHtml(msg) + '</span><button onclick="this.parentElement.remove()" style="background:none;border:none;color:#fff;cursor:pointer;font-size:16px;">&times;</button>';
+        }
+
+        function showToast(msg, type) {
+            var t = document.getElementById('toast');
+            t.textContent = msg;
+            t.className = 'toast ' + (type || '');
+            t.classList.remove('hidden');
+            setTimeout(function () { t.classList.add('hidden'); }, 3000);
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            var div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // =====================================================
+        // Filtered Words Management
+        // =====================================================
+
+        function loadFilteredWords() {
+            var container = document.getElementById('filtered-words-list');
+            container.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+
+            google.script.run.withSuccessHandler(function (words) {
+                if (!words || words.length === 0) {
+                    container.innerHTML = '<div class="queue-item"><span style="color:var(--text-muted)">No filtered words yet. Click "Reset Defaults" to add common exclusions.</span></div>';
+                    return;
+                }
+
+                var html = words.map(function (w) {
+                    return '<div class="queue-item">' +
+                        '<div><div class="queue-name">' + escapeHtml(w.word) + '</div>' +
+                        '<div class="queue-meta">' + w.category + '</div></div>' +
+                        '<button class="btn btn-sm" onclick="removeFilteredWord(\'' + escapeHtml(w.word) + '\')" style="color:var(--negative);">×</button></div>';
+                }).join('');
+                container.innerHTML = html;
+            }).withFailureHandler(function (e) {
+                container.innerHTML = '<div class="queue-item" style="color:var(--negative)">Error loading filtered words</div>';
+            }).cbqGetFilteredWords();
+        }
+
+        function addFilteredWord() {
+            var word = document.getElementById('new-filter-word').value.trim();
+            if (!word) { showToast('Enter a word to filter', 'error'); return; }
+            if (word.length < 2) { showToast('Word must be at least 2 characters', 'error'); return; }
+
+            google.script.run.withSuccessHandler(function (entry) {
+                showToast('Added "' + entry.word + '" to filter list', 'success');
+                document.getElementById('new-filter-word').value = '';
+                loadFilteredWords();
+            }).withFailureHandler(function (e) {
+                showToast('Failed: ' + e.message, 'error');
+            }).cbqAddFilteredWord(word, 'CUSTOM');
+        }
+
+        function removeFilteredWord(word) {
+            google.script.run.withSuccessHandler(function (result) {
+                if (result) {
+                    showToast('Removed "' + word + '" from filter list', 'success');
+                    loadFilteredWords();
+                } else {
+                    showToast('Word not found', 'error');
+                }
+            }).withFailureHandler(function (e) {
+                showToast('Failed: ' + e.message, 'error');
+            }).cbqRemoveFilteredWord(word);
+        }
+
+        function initializeDefaultFilters() {
+            showToast('Initializing default filters...', 'info');
+            google.script.run.withSuccessHandler(function (result) {
+                showToast(result.message, 'success');
+                loadFilteredWords();
+            }).withFailureHandler(function (e) {
+                showToast('Failed: ' + e.message, 'error');
+            }).cbqInitializeFilteredWords();
+        }
+    </script>
+</body>
+
+</html>

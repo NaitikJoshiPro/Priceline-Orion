@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <base target="_top">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ØN - Report Details</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
+
+    <!-- Global Theme -->
+    <?!= include('Theme'); ?>
+    <?!= include('ThemeState'); ?>
+</head>
+
+<body>
+    <div class="app-container">
+
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <span class="logo">Ø</span>
+                <div>
+                    <div class="module-name">Reporting</div>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a class="nav-item" href="<?= ScriptApp.getService().getUrl() ?>?page=queue">
+                    <span class="nav-icon">📊</span>
+                    <span>Reports Queue</span>
+                </a>
+                <?if (isAdmin) { ?>
+                <a class="nav-item" href="<?= ScriptApp.getService().getUrl() ?>?page=admin">
+                    <span class="nav-icon">⚙️</span>
+                    <span>Admin Panel</span>
+                </a>
+                <? } ?>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <span class="user-email">
+                        <?= user ?>
+                    </span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+
+            <!-- Header -->
+            <header class="header">
+                <div style="display: flex; align-items: center; gap: var(--spacing-md);">
+                    <a href="<?= ScriptApp.getService().getUrl() ?>?page=queue" class="btn btn-icon">←</a>
+                    <h1 class="page-title" id="page-title">Report Details</h1>
+                </div>
+                <div class="header-actions" id="header-actions">
+                    <!-- Filled by JS -->
+                </div>
+            </header>
+
+            <!-- Content -->
+            <div class="content" id="content">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <span>Loading report...</span>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast hidden" id="toast"></div>
+
+    <script>
+        const reportId = '<?= reportId ?>';
+        let currentReport = null;
+
+        document.addEventListener('DOMContentLoaded', async function () {
+            if (!reportId) {
+                document.getElementById('content').innerHTML = '<div class="empty-state"><div class="empty-state-title">No report specified</div></div>';
+                return;
+            }
+
+            try {
+                currentReport = await api.getReportById(reportId);
+                renderReport(currentReport);
+            } catch (error) {
+                document.getElementById('content').innerHTML = '<div class="empty-state"><div class="empty-state-icon">⚠️</div><div class="empty-state-title">Failed to load report</div><div class="empty-state-text">' + error.message + '</div></div>';
+            }
+        });
+
+        function renderReport(report) {
+            document.getElementById('page-title').textContent = report.name;
+
+            // Header actions
+            let actionsHtml = '';
+            if (report.state === 'Pending') {
+                actionsHtml = `
+                    <button class="btn" onclick="rejectReport()" style="border-color: var(--state-rejected); color: var(--state-rejected);">Reject</button>
+                    <button class="btn btn-primary" onclick="approveReport()" style="background-color: var(--state-accepted); border-color: var(--state-accepted);">Approve</button>
+                `;
+            } else if (report.state === 'Rejected') {
+                actionsHtml = `<button class="btn" onclick="resubmitReport()">Resubmit for Review</button>`;
+            }
+            document.getElementById('header-actions').innerHTML = actionsHtml;
+
+            // Content
+            document.getElementById('content').innerHTML = `
+                <div class="card" style="margin-bottom: var(--spacing-lg);">
+                    <div class="card-header">
+                        <div>
+                            <span class="classification-badge ${report.classification?.toLowerCase()}">${report.classification}</span>
+                            <span class="state-badge ${report.state?.toLowerCase()}" style="margin-left: var(--spacing-sm);">${report.state}</span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Description</label>
+                        <p style="color: var(--text-secondary);">${report.description || 'No description provided'}</p>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--spacing-md); margin-top: var(--spacing-lg);">
+                        <div>
+                            <label class="form-label">Frequency</label>
+                            <p style="color: var(--text-primary); font-weight: 500;">${report.frequency}</p>
+                        </div>
+                        <div>
+                            <label class="form-label">Team</label>
+                            <p style="color: var(--text-primary); font-weight: 500;">${report.team}</p>
+                        </div>
+                        <div>
+                            <label class="form-label">Owner</label>
+                            <p style="color: var(--text-primary); font-weight: 500;">${report.owner || '-'}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card" style="margin-bottom: var(--spacing-lg);">
+                    <div class="card-header">
+                        <h3 class="card-title">RACI Matrix</h3>
+                    </div>
+                    <div class="raci-grid">
+                        <div class="raci-item">
+                            <div class="raci-role">R - Responsible</div>
+                            <div class="raci-value">${report.responsible || '-'}</div>
+                        </div>
+                        <div class="raci-item">
+                            <div class="raci-role">A - Accountable</div>
+                            <div class="raci-value">${report.accountable || '-'}</div>
+                        </div>
+                        <div class="raci-item">
+                            <div class="raci-role">C - Consulted</div>
+                            <div class="raci-value">${report.consulted || '-'}</div>
+                        </div>
+                        <div class="raci-item">
+                            <div class="raci-role">I - Informed</div>
+                            <div class="raci-value">${report.informed || '-'}</div>
+                        </div>
+                    </div>
+                </div>
+                
+                ${report.storageLocation || report.dataSource ? `
+                <div class="card" style="margin-bottom: var(--spacing-lg);">
+                    <div class="card-header">
+                        <h3 class="card-title">Data & Storage</h3>
+                    </div>
+                    ${report.dataSource ? `
+                    <div class="form-group">
+                        <label class="form-label">Data Source</label>
+                        <p style="color: var(--text-secondary); font-family: var(--font-data); font-size: 12px;">${report.dataSource}</p>
+                    </div>
+                    ` : ''}
+                    ${report.storageLocation ? `
+                    <div class="form-group">
+                        <label class="form-label">Storage Location</label>
+                        <p style="color: var(--text-muted); font-family: var(--font-data); font-size: 12px;">${report.storageLocation}</p>
+                    </div>
+                    ` : ''}
+                </div>
+                ` : ''}
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Metadata</h3>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--spacing-md);">
+                        <div>
+                            <label class="form-label">Created By</label>
+                            <p style="color: var(--text-secondary);">${report.createdBy || '-'}</p>
+                        </div>
+                        <div>
+                            <label class="form-label">Created At</label>
+                            <p style="color: var(--text-muted); font-family: var(--font-data); font-size: 12px;">${report.createdAt || '-'}</p>
+                        </div>
+                        <div>
+                            <label class="form-label">Updated By</label>
+                            <p style="color: var(--text-secondary);">${report.updatedBy || '-'}</p>
+                        </div>
+                        <div>
+                            <label class="form-label">Updated At</label>
+                            <p style="color: var(--text-muted); font-family: var(--font-data); font-size: 12px;">${report.updatedAt || '-'}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function approveReport() {
+            try {
+                showToast('Processing approval...', 'info');
+                await api.changeReportState(reportId, 'Accepted', '');
+                showToast('Report approved!', 'success');
+                currentReport = await api.getReportById(reportId);
+                renderReport(currentReport);
+            } catch (error) {
+                showToast('Approval failed: ' + error.message, 'error');
+            }
+        }
+
+        async function rejectReport() {
+            const reason = prompt('Please provide a rejection reason:');
+            if (reason === null) return;
+
+            try {
+                showToast('Processing rejection...', 'info');
+                await api.changeReportState(reportId, 'Rejected', reason);
+                showToast('Report rejected', 'success');
+                currentReport = await api.getReportById(reportId);
+                renderReport(currentReport);
+            } catch (error) {
+                showToast('Rejection failed: ' + error.message, 'error');
+            }
+        }
+
+        async function resubmitReport() {
+            try {
+                showToast('Resubmitting...', 'info');
+                await api.resubmitReport(reportId);
+                showToast('Report resubmitted for review', 'success');
+                currentReport = await api.getReportById(reportId);
+                renderReport(currentReport);
+            } catch (error) {
+                showToast('Resubmit failed: ' + error.message, 'error');
+            }
+        }
+
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'toast ' + type;
+            toast.classList.remove('hidden');
+            setTimeout(() => toast.classList.add('hidden'), 3000);
+        }
+    </script>
+
+    <?!= include('RTPartials'); ?>
+
+</body>
+
+</html>

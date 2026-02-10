@@ -1,0 +1,1515 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <base target="_top">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ØN - Reports Queue</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
+
+    <!-- Global Theme -->
+    <?!= include('Theme'); ?>
+    <?!= include('ThemeState'); ?>
+
+    <style>
+        /* ReportsQueue-specific styles */
+        .hidden {
+            display: none !important;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .app {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 24px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 300;
+            color: var(--accent-primary);
+            letter-spacing: -2px;
+            text-decoration: none;
+        }
+
+        .nav {
+            display: flex;
+            gap: 8px;
+        }
+
+        .nav-link {
+            padding: 8px 16px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            border-radius: 6px;
+            transition: all 150ms;
+        }
+
+        .nav-link:hover {
+            color: var(--text-primary);
+            background: var(--bg-elevated);
+        }
+
+        .nav-link.active {
+            color: var(--text-primary);
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-badge {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .icon-btn {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 150ms;
+            background: transparent;
+            border: none;
+            font-size: 16px;
+        }
+
+        .icon-btn:hover {
+            background: var(--bg-elevated);
+            color: var(--text-primary);
+        }
+
+        .main {
+            flex: 1;
+            padding: 24px;
+            overflow-y: auto;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            padding: 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 150ms;
+        }
+
+        .stat-card:hover {
+            border-color: var(--border-hover);
+            transform: translateY(-2px);
+        }
+
+        .stat-card.active {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 20px rgba(230, 230, 230, 0.1);
+        }
+
+        .stat-label {
+            font-size: 10px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 600;
+            font-family: var(--font-data);
+        }
+
+        .stat-value.all {
+            color: var(--text-primary);
+        }
+
+        .stat-value.pending {
+            color: var(--state-pending);
+        }
+
+        .stat-value.accepted {
+            color: var(--state-accepted);
+        }
+
+        .stat-value.rejected {
+            color: var(--state-rejected);
+        }
+
+        .sub-filters {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .sub-filter {
+            padding: 6px 12px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 150ms;
+        }
+
+        .sub-filter:hover {
+            border-color: var(--border-hover);
+            color: var(--text-primary);
+        }
+
+        .sub-filter.active {
+            background: var(--accent-primary);
+            color: var(--bg-primary);
+            border-color: var(--accent-primary);
+        }
+
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .filters-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            font-size: 12px;
+            color: var(--text-muted);
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .filters-toggle:hover {
+            border-color: var(--border-hover);
+            color: var(--text-secondary);
+        }
+
+        .bulk-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .filters-bar {
+            display: none;
+            flex-wrap: wrap;
+            gap: 12px;
+            padding: 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
+
+        .filters-bar.show {
+            display: flex;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .filter-label {
+            font-size: 9px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .filter-select,
+        .filter-input {
+            padding: 6px 10px;
+            font-size: 12px;
+            font-family: var(--font-ui);
+            color: var(--text-primary);
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            min-width: 120px;
+        }
+
+        .filter-input {
+            min-width: 200px;
+        }
+
+        .reports-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .report-row {
+            display: grid;
+            grid-template-columns: 2fr 120px 100px 100px 80px;
+            align-items: center;
+            gap: 16px;
+            padding: 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 150ms;
+        }
+
+        .report-row:hover {
+            border-color: var(--border-hover);
+        }
+
+        .report-name {
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .report-desc {
+            font-size: 12px;
+            color: var(--text-muted);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .report-meta {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .badge {
+            display: inline-flex;
+            padding: 4px 10px;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            border-radius: 4px;
+        }
+
+        .badge.pending {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--state-pending);
+        }
+
+        .badge.accepted {
+            background: rgba(34, 197, 94, 0.15);
+            color: var(--state-accepted);
+        }
+
+        .badge.rejected {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--state-rejected);
+        }
+
+        .badge.master {
+            background: var(--bg-elevated);
+            color: var(--accent-primary);
+            border: 1px solid var(--border);
+        }
+
+        .badge.derived {
+            background: var(--bg-elevated);
+            color: var(--text-muted);
+            border: 1px solid var(--border);
+        }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            padding: 48px;
+            color: var(--text-muted);
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border);
+            border-top-color: var(--accent-primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 64px;
+            color: var(--text-muted);
+            text-align: center;
+        }
+
+        .empty-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal {
+            width: 90%;
+            max-width: 750px;
+            max-height: 90vh;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .modal-title {
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        .modal-close {
+            width: 32px;
+            height: 32px;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 20px;
+            border-radius: 4px;
+        }
+
+        .modal-close:hover {
+            background: var(--bg-elevated);
+            color: var(--text-primary);
+        }
+
+        .modal-body {
+            padding: 24px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 16px 24px;
+            border-top: 1px solid var(--border);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 10px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-input,
+        .form-select,
+        .form-textarea {
+            width: 100%;
+            padding: 10px 12px;
+            font-family: var(--font-ui);
+            font-size: 14px;
+            color: var(--text-primary);
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+        }
+
+        .form-input:focus,
+        .form-select:focus,
+        .form-textarea:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+        }
+
+        .form-textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        .form-input[readonly] {
+            background: var(--bg-secondary);
+            color: var(--text-muted);
+            cursor: not-allowed;
+        }
+
+        .user-picker-wrap {
+            position: relative;
+        }
+
+        .user-picker-input {
+            width: 100%;
+            padding: 10px 12px;
+            font-family: var(--font-ui);
+            font-size: 14px;
+            color: var(--text-primary);
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+        }
+
+        .user-picker-input:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+        }
+
+        .user-picker-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            max-height: 200px;
+            overflow-y: auto;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            z-index: 100;
+            display: none;
+        }
+
+        .user-picker-dropdown.show {
+            display: block;
+        }
+
+        .user-picker-item {
+            padding: 10px 12px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: background 100ms;
+        }
+
+        .user-picker-item:hover {
+            background: var(--bg-elevated);
+            color: var(--text-primary);
+        }
+
+        .user-picker-item .email {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-left: 8px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 18px;
+            font-family: var(--font-ui);
+            font-size: 13px;
+            font-weight: 500;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            cursor: pointer;
+            background: transparent;
+            color: var(--text-primary);
+            transition: all 150ms;
+        }
+
+        .btn:hover {
+            border-color: var(--border-hover);
+            background: var(--bg-elevated);
+        }
+
+        .btn-primary {
+            background: var(--accent-primary);
+            color: var(--bg-primary);
+            border-color: var(--accent-primary);
+        }
+
+        .btn-primary:hover {
+            opacity: 0.9;
+        }
+
+        .btn-success {
+            background: var(--state-accepted);
+            color: var(--bg-primary);
+            border-color: var(--state-accepted);
+        }
+
+        .btn-danger {
+            border-color: var(--state-rejected);
+            color: var(--state-rejected);
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        .raci-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin: 16px 0;
+        }
+
+        .raci-item {
+            padding: 12px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+        }
+
+        .raci-role {
+            font-size: 9px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+
+        .raci-value {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .storage-link {
+            display: block;
+            padding: 16px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-decoration: none;
+            transition: all 150ms;
+        }
+
+        .storage-link:hover {
+            border-color: var(--accent-primary);
+        }
+
+        .storage-link-label {
+            font-size: 9px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+
+        .storage-link-url {
+            font-size: 14px;
+            color: var(--accent-primary);
+            word-break: break-all;
+        }
+
+        .storage-link-icon {
+            font-size: 20px;
+            float: right;
+        }
+
+        .timeline {
+            margin: 20px 0;
+        }
+
+        .timeline-item {
+            display: flex;
+            gap: 12px;
+            padding: 12px 0;
+            border-left: 2px solid var(--border);
+            margin-left: 8px;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -5px;
+            top: 16px;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--border);
+        }
+
+        .timeline-item.approve::before {
+            background: var(--state-accepted);
+        }
+
+        .timeline-item.reject::before {
+            background: var(--state-rejected);
+        }
+
+        .timeline-item.comment::before {
+            background: var(--state-pending);
+        }
+
+        .timeline-content {
+            flex: 1;
+        }
+
+        .timeline-user {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .timeline-action {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .timeline-time {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .comments-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+        }
+
+        .comment {
+            padding: 12px;
+            background: var(--bg-elevated);
+            border-radius: 6px;
+            margin-bottom: 8px;
+        }
+
+        .comment-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+        }
+
+        .comment-user {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .comment-time {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .comment-text {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .comment-form {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .comment-input {
+            flex: 1;
+            padding: 10px;
+            font-family: var(--font-ui);
+            font-size: 13px;
+            color: var(--text-primary);
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            padding: 12px 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 13px;
+            z-index: 2000;
+            animation: slideUp 0.3s ease;
+        }
+
+        .toast.success {
+            border-color: var(--state-accepted);
+        }
+
+        .toast.error {
+            border-color: var(--state-rejected);
+        }
+
+        .fab {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+        }
+
+        @media (max-width: 768px) {
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .report-row {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .raci-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app">
+        <header class="header">
+            <div class="header-left">
+                <a href="<?= ScriptApp.getService().getUrl() ?>" class="logo">Ø</a>
+                <nav class="nav">
+                    <a class="nav-link active" href="<?= ScriptApp.getService().getUrl() ?>?page=queue">Reports
+                        Queue</a>
+                </nav>
+            </div>
+            <div class="header-right">
+                <span class="user-badge">
+                    <?= user ?>
+                </span>
+                <button class="theme-toggle" onclick="Theme.toggle()" title="Toggle theme"
+                    aria-label="Toggle dark/light mode">
+                    <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="5" />
+                        <path
+                            d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+                    </svg>
+                    <svg class="icon-moon" viewBox="0 0 24 24" fill="currentColor">
+                        <path
+                            d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
+                    </svg>
+                </button>
+                <? if (isAdmin) { ?>
+                <a class="icon-btn" href="<?= ScriptApp.getService().getUrl() ?>?page=admin" title="Admin Panel">⚙️</a>
+                <? } ?>
+            </div>
+        </header>
+
+        <main class="main">
+            <div class="stats">
+                <div class="stat-card active" data-queue="all" onclick="switchQueue('all')">
+                    <div class="stat-label">All Reports</div>
+                    <div class="stat-value all" id="stat-all">-</div>
+                </div>
+                <div class="stat-card" data-queue="pending" onclick="switchQueue('pending')">
+                    <div class="stat-label">Pending Review</div>
+                    <div class="stat-value pending" id="stat-pending">-</div>
+                </div>
+                <div class="stat-card" data-queue="accepted" onclick="switchQueue('accepted')">
+                    <div class="stat-label">Accepted</div>
+                    <div class="stat-value accepted" id="stat-accepted">-</div>
+                </div>
+                <div class="stat-card" data-queue="rejected" onclick="switchQueue('rejected')">
+                    <div class="stat-label">Rejected</div>
+                    <div class="stat-value rejected" id="stat-rejected">-</div>
+                </div>
+            </div>
+
+            <div class="sub-filters">
+                <button class="sub-filter active" data-view="all" onclick="switchView('all')">All</button>
+                <button class="sub-filter" data-view="mine" onclick="switchView('mine')">My Reports</button>
+                <button class="sub-filter" data-view="review" onclick="switchView('review')">Needs My Review</button>
+            </div>
+
+            <div class="toolbar">
+                <div class="filters-toggle" onclick="toggleFilters()">
+                    <span id="filter-icon">⊕</span> Filters & Sort
+                </div>
+                <? if (featureFlags.ALLOW_BULK_ACTIONS) { ?>
+                <div class="bulk-actions" id="bulk-actions" style="display:none;">
+                    <button class="btn btn-sm btn-success" onclick="bulkApprove()">✓ Approve Selected</button>
+                    <button class="btn btn-sm btn-danger" onclick="bulkReject()">✗ Reject Selected</button>
+                    <button class="btn btn-sm" onclick="exportSelected()">↓ Export</button>
+                </div>
+                <? } ?>
+            </div>
+
+            <div class="filters-bar" id="filters-bar">
+                <div class="filter-group">
+                    <label class="filter-label">Search</label>
+                    <input type="text" class="filter-input" id="filter-search" placeholder="Search reports...">
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label">Team</label>
+                    <select class="filter-select" id="filter-team">
+                        <option value="">All Teams</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label">Classification</label>
+                    <select class="filter-select" id="filter-class">
+                        <option value="">All</option>
+                        <option value="Master">Master</option>
+                        <option value="Derived">Derived</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label">Sort By</label>
+                    <select class="filter-select" id="filter-sort">
+                        <option value="newest">Newest First</option>
+                        <option value="oldest">Oldest First</option>
+                        <option value="name-asc">Name A-Z</option>
+                        <option value="name-desc">Name Z-A</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="reports-list" id="reports-list">
+                <div class="loading">
+                    <div class="spinner"></div><span>Loading reports...</span>
+                </div>
+            </div>
+
+            <div class="fab">
+                <button class="btn btn-primary" onclick="openCreateModal()">+ New Report</button>
+            </div>
+        </main>
+    </div>
+
+    <!-- View Report Modal -->
+    <div class="modal-overlay hidden" id="view-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title" id="view-title">Report Details</h2>
+                <button class="modal-close" onclick="closeModal('view-modal')">×</button>
+            </div>
+            <div class="modal-body" id="view-body"></div>
+            <div class="modal-footer" id="view-footer"></div>
+        </div>
+    </div>
+
+    <!-- Create Report Modal -->
+    <div class="modal-overlay hidden" id="create-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title">Create New Report</h2>
+                <button class="modal-close" onclick="closeModal('create-modal')">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Report Name *</label>
+                        <input type="text" class="form-input" id="create-name"
+                            placeholder="e.g. Daily Performance Report">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Classification</label>
+                        <select class="form-select" id="create-classification">
+                            <option value="Master">Master</option>
+                            <option value="Derived">Derived</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Description</label>
+                    <textarea class="form-textarea" id="create-description"
+                        placeholder="Brief description..."></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Frequency</label>
+                        <select class="form-select" id="create-frequency">
+                            <option value="Daily">Daily</option>
+                            <option value="Weekly">Weekly</option>
+                            <option value="Monthly">Monthly</option>
+                            <option value="As Triggered">As Triggered</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Team</label>
+                        <select class="form-select" id="create-team">
+                            <option value="Reporting Team">Reporting Team</option>
+                            <option value="Fraud Prevention Team">Fraud Prevention Team</option>
+                            <option value="Chargeback Team">Chargeback Team</option>
+                            <option value="SME">SME</option>
+                        </select>
+                    </div>
+                </div>
+                <div
+                    style="margin: 20px 0 10px; font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">
+                    RACI Assignment</div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Responsible (You)</label>
+                        <input type="text" class="form-input" id="create-responsible" value="<?= user ?>" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Accountable *</label>
+                        <div class="user-picker-wrap">
+                            <input type="text" class="user-picker-input" id="create-accountable"
+                                placeholder="Type to search..." autocomplete="off" data-email="">
+                            <div class="user-picker-dropdown" id="dropdown-accountable"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Consulted</label>
+                        <div class="user-picker-wrap">
+                            <input type="text" class="user-picker-input" id="create-consulted"
+                                placeholder="Type to search..." autocomplete="off" data-email="">
+                            <div class="user-picker-dropdown" id="dropdown-consulted"></div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Informed</label>
+                        <div class="user-picker-wrap">
+                            <input type="text" class="user-picker-input" id="create-informed"
+                                placeholder="Type to search..." autocomplete="off" data-email="">
+                            <div class="user-picker-dropdown" id="dropdown-informed"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Data Source</label>
+                    <input type="text" class="form-input" id="create-dataSource"
+                        placeholder="e.g. Accertify | CB Portals">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Storage Location (Link to file)</label>
+                    <input type="text" class="form-input" id="create-storageLocation"
+                        placeholder="e.g. https://drive.google.com/...">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div></div>
+                <div style="display:flex;gap:8px;">
+                    <button class="btn" onclick="closeModal('create-modal')">Cancel</button>
+                    <button class="btn btn-success" onclick="submitCreateReport()">Create Report</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reject Modal (styled) -->
+    <div class="modal-overlay hidden" id="reject-modal">
+        <div class="modal" style="max-width:500px;">
+            <div class="modal-header">
+                <h2 class="modal-title">Reject Report</h2>
+                <button class="modal-close" onclick="closeModal('reject-modal')">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Rejection Reason *</label>
+                    <textarea class="form-textarea" id="reject-reason"
+                        placeholder="Please provide a reason for rejection..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div></div>
+                <div style="display:flex;gap:8px;">
+                    <button class="btn" onclick="closeModal('reject-modal')">Cancel</button>
+                    <button class="btn btn-danger" onclick="confirmReject()">Reject Report</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Approve Modal (styled) -->
+    <div class="modal-overlay hidden" id="approve-modal">
+        <div class="modal" style="max-width:500px;">
+            <div class="modal-header">
+                <h2 class="modal-title">Approve Report</h2>
+                <button class="modal-close" onclick="closeModal('approve-modal')">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Comment (optional)</label>
+                    <textarea class="form-textarea" id="approve-comment" placeholder="Add a comment..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div></div>
+                <div style="display:flex;gap:8px;">
+                    <button class="btn" onclick="closeModal('approve-modal')">Cancel</button>
+                    <button class="btn btn-success" onclick="confirmApprove()">Approve Report</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast hidden" id="toast"></div>
+
+    <script>
+        var App = {
+            reports: [],
+            users: [],
+            currentQueue: 'all',
+            currentView: 'all',
+            currentReport: null,
+            userEmail: '<?= user ?>',
+            isAdmin: <?= isAdmin ?>,
+            allowBulkActions: <?= featureFlags.ALLOW_BULK_ACTIONS ?>
+        };
+
+        document.addEventListener('DOMContentLoaded', function () {
+            loadTheme();
+            loadUsers();
+            loadReports();
+            setupFilters();
+            setupUserPickers();
+        });
+
+        function toggleTheme() {
+            var current = document.body.getAttribute('data-theme') || 'dark';
+            var next = current === 'dark' ? 'light' : 'dark';
+            document.body.setAttribute('data-theme', next);
+            localStorage.setItem('theme', next);
+        }
+        function loadTheme() {
+            var saved = localStorage.getItem('theme') || 'dark';
+            document.body.setAttribute('data-theme', saved);
+        }
+
+        function loadUsers() {
+            google.script.run.withSuccessHandler(function (users) {
+                App.users = users || [];
+            }).getUsersForPicker();
+        }
+
+        function loadReports() {
+            showLoading();
+            google.script.run.withSuccessHandler(function (reports) {
+                App.reports = reports || [];
+                updateStats();
+                renderReports();
+            }).withFailureHandler(function (err) {
+                showError(err.message);
+            }).getReports({});
+        }
+
+        function setupFilters() {
+            google.script.run.withSuccessHandler(function (options) {
+                var teamSelect = document.getElementById('filter-team');
+                if (options && options.teams) {
+                    options.teams.forEach(function (t) {
+                        var opt = document.createElement('option');
+                        opt.value = t; opt.textContent = t;
+                        teamSelect.appendChild(opt);
+                    });
+                }
+            }).getFilterOptions();
+            document.getElementById('filter-search').addEventListener('input', debounce(renderReports, 300));
+            document.getElementById('filter-team').addEventListener('change', renderReports);
+            document.getElementById('filter-class').addEventListener('change', renderReports);
+            document.getElementById('filter-sort').addEventListener('change', renderReports);
+        }
+
+        function setupUserPickers() {
+            ['accountable', 'consulted', 'informed'].forEach(function (field) {
+                var input = document.getElementById('create-' + field);
+                var dropdown = document.getElementById('dropdown-' + field);
+                input.addEventListener('focus', function () { showUserDropdown(field, ''); });
+                input.addEventListener('input', function () { showUserDropdown(field, input.value); });
+                input.addEventListener('blur', function () { setTimeout(function () { dropdown.classList.remove('show'); }, 200); });
+            });
+        }
+
+        function showUserDropdown(field, query) {
+            var dropdown = document.getElementById('dropdown-' + field);
+            var q = query.toLowerCase();
+            var filtered = App.users.filter(function (u) {
+                return u.displayLabel.toLowerCase().includes(q) || u.email.toLowerCase().includes(q);
+            }).slice(0, 10);
+            if (filtered.length === 0) {
+                dropdown.innerHTML = '<div class="user-picker-item" style="color:var(--text-muted)">No users found</div>';
+            } else {
+                dropdown.innerHTML = filtered.map(function (u) {
+                    return '<div class="user-picker-item" onclick="selectUser(\'' + field + '\', \'' + u.email + '\', \'' + u.displayLabel + '\')">' + u.displayLabel + '<span class="email">' + u.email + '</span></div>';
+                }).join('');
+            }
+            dropdown.classList.add('show');
+        }
+
+        function selectUser(field, email, label) {
+            var input = document.getElementById('create-' + field);
+            input.value = label;
+            input.setAttribute('data-email', email);
+            document.getElementById('dropdown-' + field).classList.remove('show');
+        }
+
+        function updateStats() {
+            document.getElementById('stat-all').textContent = App.reports.length;
+            document.getElementById('stat-pending').textContent = App.reports.filter(function (r) { return r.state === 'Pending'; }).length;
+            document.getElementById('stat-accepted').textContent = App.reports.filter(function (r) { return r.state === 'Accepted'; }).length;
+            document.getElementById('stat-rejected').textContent = App.reports.filter(function (r) { return r.state === 'Rejected'; }).length;
+        }
+
+        function switchQueue(queue) {
+            App.currentQueue = queue;
+            document.querySelectorAll('.stat-card').forEach(function (c) { c.classList.toggle('active', c.dataset.queue === queue); });
+            renderReports();
+        }
+
+        function switchView(view) {
+            App.currentView = view;
+            document.querySelectorAll('.sub-filter').forEach(function (f) { f.classList.toggle('active', f.dataset.view === view); });
+            renderReports();
+        }
+
+        function toggleFilters() {
+            var bar = document.getElementById('filters-bar');
+            var icon = document.getElementById('filter-icon');
+            bar.classList.toggle('show');
+            icon.textContent = bar.classList.contains('show') ? '⊖' : '⊕';
+        }
+
+        function getFilteredReports() {
+            var list = App.reports.slice();
+            var email = App.userEmail.toLowerCase();
+            if (App.currentQueue === 'pending') list = list.filter(function (r) { return r.state === 'Pending'; });
+            else if (App.currentQueue === 'accepted') list = list.filter(function (r) { return r.state === 'Accepted'; });
+            else if (App.currentQueue === 'rejected') list = list.filter(function (r) { return r.state === 'Rejected'; });
+            if (App.currentView === 'mine') {
+                list = list.filter(function (r) { return r.responsible && r.responsible.toLowerCase() === email; });
+            } else if (App.currentView === 'review') {
+                list = list.filter(function (r) {
+                    return (r.accountable && r.accountable.toLowerCase().includes(email)) ||
+                        (r.consulted && r.consulted.toLowerCase().includes(email)) ||
+                        (r.informed && r.informed.toLowerCase().includes(email));
+                });
+            }
+            var search = document.getElementById('filter-search').value.toLowerCase();
+            if (search) list = list.filter(function (r) { return (r.name && r.name.toLowerCase().includes(search)) || (r.description && r.description.toLowerCase().includes(search)); });
+            var team = document.getElementById('filter-team').value;
+            if (team) list = list.filter(function (r) { return r.team === team; });
+            var cls = document.getElementById('filter-class').value;
+            if (cls) list = list.filter(function (r) { return r.classification === cls; });
+            var sort = document.getElementById('filter-sort').value;
+            if (sort === 'newest') list.sort(function (a, b) { return new Date(b.createdAt) - new Date(a.createdAt); });
+            else if (sort === 'oldest') list.sort(function (a, b) { return new Date(a.createdAt) - new Date(b.createdAt); });
+            else if (sort === 'name-asc') list.sort(function (a, b) { return (a.name || '').localeCompare(b.name || ''); });
+            else if (sort === 'name-desc') list.sort(function (a, b) { return (b.name || '').localeCompare(a.name || ''); });
+            return list;
+        }
+
+        function renderReports() {
+            var list = getFilteredReports();
+            var container = document.getElementById('reports-list');
+            if (list.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><div>No reports found</div></div>';
+                return;
+            }
+            container.innerHTML = list.map(function (r) {
+                return '<div class="report-row" onclick="openViewModal(\'' + r.id + '\')">' +
+                    '<div><div class="report-name">' + escapeHtml(r.name) + '</div><div class="report-desc">' + escapeHtml(r.description || '') + '</div></div>' +
+                    '<div class="report-meta">' + escapeHtml(r.team || '-') + '</div>' +
+                    '<div class="report-meta">' + escapeHtml(r.frequency || '-') + '</div>' +
+                    '<div><span class="badge ' + (r.classification || '').toLowerCase() + '">' + (r.classification || 'N/A') + '</span></div>' +
+                    '<div><span class="badge ' + (r.state || 'pending').toLowerCase() + '">' + (r.state || 'Pending') + '</span></div></div>';
+            }).join('');
+        }
+
+        function showLoading() { document.getElementById('reports-list').innerHTML = '<div class="loading"><div class="spinner"></div><span>Loading...</span></div>'; }
+        function showError(msg) { document.getElementById('reports-list').innerHTML = '<div class="empty-state"><div class="empty-icon">⚠️</div><div>' + msg + '</div></div>'; }
+
+        function openViewModal(id) {
+            var r = App.reports.find(function (x) { return x.id === id; });
+            if (!r) return;
+            App.currentReport = r;
+            document.getElementById('view-title').textContent = r.name;
+
+            var approvalHistory = [];
+            try { approvalHistory = JSON.parse(r.approvalHistory || '[]'); } catch (e) { }
+            var comments = [];
+            try { comments = JSON.parse(r.comments || '[]'); } catch (e) { }
+
+            // Storage link at top
+            var storageHtml = '';
+            if (r.storageLocation) {
+                var linkUrl = r.storageLocation.startsWith('http') ? r.storageLocation : 'https://' + r.storageLocation;
+                storageHtml = '<a href="' + escapeHtml(linkUrl) + '" target="_blank" class="storage-link">' +
+                    '<span class="storage-link-icon">🔗</span>' +
+                    '<div class="storage-link-label">Storage Location (Click to open)</div>' +
+                    '<div class="storage-link-url">' + escapeHtml(r.storageLocation) + '</div></a>';
+            }
+
+            var historyHtml = '';
+            if (approvalHistory.length > 0) {
+                historyHtml = '<div style="margin-top:20px;"><div class="form-label">Approval History</div><div class="timeline">' +
+                    approvalHistory.map(function (h) {
+                        return '<div class="timeline-item ' + (h.action || '').toLowerCase() + '"><div class="timeline-content"><div class="timeline-user">' + escapeHtml(h.user) + '</div><div class="timeline-action">' + escapeHtml(h.action) + (h.comment ? ': ' + escapeHtml(h.comment) : '') + '</div><div class="timeline-time">' + (h.timestamp || '') + '</div></div></div>';
+                    }).join('') + '</div></div>';
+            }
+
+            var commentsHtml = '<div class="comments-section"><div class="form-label">Comments (' + comments.length + ')</div>';
+            if (comments.length > 0) {
+                commentsHtml += comments.map(function (c) {
+                    return '<div class="comment"><div class="comment-header"><span class="comment-user">' + escapeHtml(c.user) + '</span><span class="comment-time">' + (c.timestamp || '') + '</span></div><div class="comment-text">' + escapeHtml(c.text) + '</div></div>';
+                }).join('');
+            } else {
+                commentsHtml += '<div style="color:var(--text-muted);font-size:12px;padding:12px 0;">No comments yet</div>';
+            }
+            commentsHtml += '<div class="comment-form"><input type="text" class="comment-input" id="new-comment" placeholder="Add a comment..."><button class="btn btn-sm" onclick="addComment()">Post</button></div></div>';
+
+            document.getElementById('view-body').innerHTML = storageHtml +
+                '<p style="color:var(--text-secondary);margin-bottom:16px;">' + (r.description || 'No description') + '</p>' +
+                '<div class="form-row"><div class="form-group"><label class="form-label">Classification</label><span class="badge ' + (r.classification || '').toLowerCase() + '">' + (r.classification || 'N/A') + '</span></div>' +
+                '<div class="form-group"><label class="form-label">Frequency</label><p style="color:var(--text-secondary)">' + (r.frequency || '-') + '</p></div></div>' +
+                '<div class="form-row"><div class="form-group"><label class="form-label">Team</label><p style="color:var(--text-secondary)">' + (r.team || '-') + '</p></div>' +
+                '<div class="form-group"><label class="form-label">State</label><span class="badge ' + (r.state || 'pending').toLowerCase() + '">' + (r.state || 'Pending') + '</span></div></div>' +
+                '<div class="raci-grid">' +
+                '<div class="raci-item"><div class="raci-role">Responsible</div><div class="raci-value">' + emailToName(r.responsible) + '</div></div>' +
+                '<div class="raci-item"><div class="raci-role">Accountable</div><div class="raci-value">' + emailToName(r.accountable) + '</div></div>' +
+                '<div class="raci-item"><div class="raci-role">Consulted</div><div class="raci-value">' + emailToName(r.consulted) + '</div></div>' +
+                '<div class="raci-item"><div class="raci-role">Informed</div><div class="raci-value">' + emailToName(r.informed) + '</div></div></div>' +
+                historyHtml + commentsHtml;
+
+            var footerLeft = '';
+            if (App.isAdmin) {
+                footerLeft = '<div><button class="btn btn-danger btn-sm" onclick="deactivateReport(\'' + r.id + '\')">🗑 Deactivate</button></div>';
+            } else {
+                footerLeft = '<div></div>';
+            }
+            var footerRight = '<button class="btn" onclick="closeModal(\'view-modal\')">Close</button>';
+            if (r.state === 'Pending') {
+                footerRight = '<button class="btn btn-danger" onclick="openRejectModal()">Reject</button><button class="btn btn-success" onclick="openApproveModal()">Approve</button>' + footerRight;
+            }
+            document.getElementById('view-footer').innerHTML = footerLeft + '<div style="display:flex;gap:8px;">' + footerRight + '</div>';
+            document.getElementById('view-modal').classList.remove('hidden');
+        }
+
+        function openRejectModal() {
+            document.getElementById('reject-reason').value = '';
+            document.getElementById('reject-modal').classList.remove('hidden');
+        }
+
+        function confirmReject() {
+            var reason = document.getElementById('reject-reason').value.trim();
+            if (!reason) { showToast('Please provide a rejection reason', 'error'); return; }
+            closeModal('reject-modal');
+            showToast('Rejecting...', 'info');
+            google.script.run.withSuccessHandler(function () {
+                showToast('Rejected', 'success');
+                closeModal('view-modal');
+                loadReports();
+            }).withFailureHandler(function (e) { showToast('Failed: ' + e.message, 'error'); }).changeReportState(App.currentReport.id, 'Rejected', reason);
+        }
+
+        function openApproveModal() {
+            document.getElementById('approve-comment').value = '';
+            document.getElementById('approve-modal').classList.remove('hidden');
+        }
+
+        function confirmApprove() {
+            var comment = document.getElementById('approve-comment').value.trim();
+            closeModal('approve-modal');
+            showToast('Approving...', 'info');
+            google.script.run.withSuccessHandler(function () {
+                showToast('Approved!', 'success');
+                closeModal('view-modal');
+                loadReports();
+            }).withFailureHandler(function (e) { showToast('Failed: ' + e.message, 'error'); }).changeReportState(App.currentReport.id, 'Accepted', comment);
+        }
+
+        function addComment() {
+            var text = document.getElementById('new-comment').value.trim();
+            if (!text || !App.currentReport) return;
+            showToast('Adding comment...', 'info');
+            google.script.run.withSuccessHandler(function () {
+                showToast('Comment added', 'success');
+                loadReports();
+                setTimeout(function () { openViewModal(App.currentReport.id); }, 500);
+            }).withFailureHandler(function (e) { showToast('Failed: ' + e.message, 'error'); }).addComment(App.currentReport.id, text);
+        }
+
+        function deactivateReport(id) {
+            if (!confirm('Deactivate this report?')) return;
+            showToast('Deactivating...', 'info');
+            google.script.run.withSuccessHandler(function () {
+                showToast('Report deactivated', 'success');
+                closeModal('view-modal');
+                loadReports();
+            }).withFailureHandler(function (e) { showToast('Failed: ' + e.message, 'error'); }).deactivateReport(id);
+        }
+
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+        function openCreateModal() { document.getElementById('create-modal').classList.remove('hidden'); }
+
+        function submitCreateReport() {
+            var name = document.getElementById('create-name').value.trim();
+            if (!name) { showToast('Report name is required', 'error'); return; }
+            var accountableEmail = document.getElementById('create-accountable').getAttribute('data-email');
+            var consultedEmail = document.getElementById('create-consulted').getAttribute('data-email');
+            var informedEmail = document.getElementById('create-informed').getAttribute('data-email');
+            if (!accountableEmail) { showToast('Please select an Accountable person', 'error'); return; }
+            var data = {
+                name: name,
+                classification: document.getElementById('create-classification').value,
+                description: document.getElementById('create-description').value,
+                frequency: document.getElementById('create-frequency').value,
+                team: document.getElementById('create-team').value,
+                accountable: accountableEmail,
+                consulted: consultedEmail,
+                informed: informedEmail,
+                dataSource: document.getElementById('create-dataSource').value,
+                storageLocation: document.getElementById('create-storageLocation').value
+            };
+            showToast('Creating report...', 'info');
+            google.script.run.withSuccessHandler(function () {
+                showToast('Report created!', 'success');
+                closeModal('create-modal');
+                clearCreateForm();
+                loadReports();
+            }).withFailureHandler(function (e) { showToast('Failed: ' + e.message, 'error'); }).createReport(data);
+        }
+
+        function clearCreateForm() {
+            ['create-name', 'create-description', 'create-accountable', 'create-consulted', 'create-informed', 'create-dataSource', 'create-storageLocation'].forEach(function (id) {
+                var el = document.getElementById(id);
+                el.value = '';
+                if (el.hasAttribute('data-email')) el.setAttribute('data-email', '');
+            });
+        }
+
+        function exportSelected() {
+            showToast('Exporting all...', 'info');
+            google.script.run.withSuccessHandler(function (data) {
+                var csv = data.headers.join(',') + '\n' + data.rows.map(function (r) { return r.map(function (c) { return '"' + (c || '').replace(/"/g, '""') + '"'; }).join(','); }).join('\n');
+                var blob = new Blob([csv], { type: 'text/csv' });
+                var a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = 'reports_export.csv';
+                a.click();
+                showToast('Exported!', 'success');
+            }).withFailureHandler(function (e) { showToast('Failed: ' + e.message, 'error'); }).exportReportsCSV(null);
+        }
+
+        function showToast(msg, type) {
+            var t = document.getElementById('toast');
+            t.textContent = msg; t.className = 'toast ' + (type || '');
+            t.classList.remove('hidden');
+            setTimeout(function () { t.classList.add('hidden'); }, 3000);
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            var div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function debounce(fn, delay) {
+            var timeout;
+            return function () { clearTimeout(timeout); timeout = setTimeout(fn, delay); };
+        }
+
+        /**
+         * Convert email to display name
+         * firstname.lastname@priceline.com -> Firstname Lastname
+         */
+        function emailToName(email) {
+            if (!email || email === '-') return '-';
+            // Handle multiple emails separated by comma or semicolon
+            var emails = email.split(/[,;]/).map(function (e) { return e.trim(); });
+            return emails.map(function (e) {
+                if (!e) return '-';
+                var localPart = e.split('@')[0];
+                if (!localPart) return e;
+                var parts = localPart.split(/[._-]/);
+                return parts.map(function (p) {
+                    return p.charAt(0).toUpperCase() + p.slice(1).toLowerCase();
+                }).join(' ');
+            }).join(', ');
+        }
+    </script>
+</body>
+
+</html>
